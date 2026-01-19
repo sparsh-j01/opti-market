@@ -1,0 +1,7 @@
+# Cache
+market_data.csv
+
+# Python
+__pycache__/
+*.pyc
+\n__pycache__/
