@@ -4,3 +4,6 @@ numpy
 yfinance
 scipy
 altair
+fastapi
+uvicorn
+pydantic

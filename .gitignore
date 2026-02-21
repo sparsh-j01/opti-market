@@ -1,7 +1,41 @@
-# Cache
-market_data.csv
-
 # Python
 __pycache__/
 *.pyc
-\n__pycache__/
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+*.egg
+
+# Node
+node_modules/
+.next/
+out/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Cache
+market_data.csv
+
+# Sample files (not part of the project)
+*.pdf
+
+# Presentation & Report (local only)
+presentation.html
+report.html
+
+# Gemini
+.gemini/
