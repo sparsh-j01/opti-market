@@ -190,7 +190,8 @@ export function BacktestPanel({ data }: { data: BacktestResult }) {
                         <CartesianGrid strokeDasharray="3 3" stroke="#e2e2e8" />
                         <XAxis dataKey="period" tick={{ fill: "#6b6b80", fontSize: 11 }} stroke="#e2e2e8" />
                         <YAxis tick={{ fill: "#6b6b80", fontSize: 11 }} stroke="#e2e2e8"
-                            tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`} />
+                            domain={['dataMin - 500', 'dataMax + 500']}
+                            tickFormatter={(v: number) => `$${(v / 1000).toFixed(1)}k`} />
                         <Tooltip contentStyle={{ background: "#fff", border: "1px solid #e2e2e8", borderRadius: "10px", color: "#1a1a2e" }}
                             formatter={(val: unknown) => [`$${Number(val).toLocaleString()}`, ""]} />
                         <Legend verticalAlign="top" align="right" wrapperStyle={{ paddingBottom: 10, fontSize: 12 }} />
