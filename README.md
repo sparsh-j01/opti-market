@@ -36,14 +36,15 @@ OptiMarket is a full-stack bond portfolio optimization platform that constructs 
 
 ## Features
 
-- 🏦 **Real Bond Data** — 200+ real corporate bonds with actual CUSIPs from FINRA TRACE (Apple, Microsoft, JPMorgan, etc.)
--  **Live Yield Curve** — Real-time Treasury data fitted with Nelson-Siegel (β₀, β₁, β₂, λ)
+- **Real Bond Data** — 200+ real corporate bonds with actual CUSIPs from FINRA TRACE (Apple, Microsoft, JPMorgan, etc.)
+- **Live Yield Curve** — Real-time Treasury data fitted with Nelson-Siegel (β₀, β₁, β₂, λ)
 - **Dual Optimization** — Linear Programming (Maximize Yield) and SLSQP (Maximize Sharpe Ratio)
--  **Institutional Constraints** — Duration matching, position limits, junk bond caps, sector diversification
--  **Monte Carlo VaR** — 10,000-simulation P&L distribution with 90/95/99% VaR and CVaR
--  **Stress Testing** — 7 scenarios: Rate shocks (±100/200bp), credit crisis, flight-to-quality, stagflation, 2008 replay
--  **Backtesting** — Optimized vs. equal-weight vs. risk-free benchmark comparison
--  **Premium Dashboard** — Dark-theme glassmorphism with Framer Motion animations
+- **Institutional Constraints** — Duration matching, position limits, junk bond caps, sector diversification
+- **Monte Carlo VaR** — 10,000-simulation P&L distribution with 90/95/99% VaR and CVaR
+- **Stress Testing** — 7 scenarios: Rate shocks (±100/200bp), credit crisis, flight-to-quality, stagflation, 2008 replay
+- **Backtesting** — Optimized vs. equal-weight vs. risk-free benchmark comparison
+- **Learning Roadmap** — Interactive 4-phase educational roadmap covering 21 quant finance concepts with sticky navigation and detail modals
+- **Premium Dashboard** — Light-theme glassmorphism with Framer Motion animations
 - **43 Unit Tests** — Full test coverage for optimizer, data loader, and risk engine
 
 ## Tech Stack
@@ -62,8 +63,8 @@ OptiMarket is a full-stack bond portfolio optimization platform that constructs 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                    Next.js Frontend                     │
-│  Landing Page · Dashboard · Monte Carlo · Stress Test   │
-│  Backtest · Efficient Frontier · Trade Sheet            │
+│  Landing Page · Dashboard · Learn Roadmap               │
+│  Monte Carlo · Stress Test · Backtest · Trade Sheet     │
 │                   (Port 3000)                           │
 └──────────────────────┬──────────────────────────────────┘
                        │ REST API (JSON)
@@ -200,6 +201,8 @@ opti-market/
     ├── src/
     │   ├── app/
     │   │   ├── page.tsx           # Landing page
+    │   │   ├── learn/
+    │   │   │   └── page.tsx       # Learning Roadmap (4 phases, 21 concepts)
     │   │   ├── dashboard/
     │   │   │   └── page.tsx       # Dashboard (6 tabs)
     │   │   ├── globals.css        # Design system
@@ -220,6 +223,13 @@ opti-market/
 3. Sharpe, W. F. (1966). Mutual Fund Performance. *The Journal of Business*, 39(1), 119–138.
 4. Kraft, D. (1988). A software package for sequential quadratic programming. *DFVLR-FB 88-28*.
 5. Jorion, P. (2006). *Value at Risk: The New Benchmark for Managing Financial Risk*. McGraw-Hill.
+6. Fabozzi, F. J. (2007). *Fixed Income Analysis*. 2nd ed. CFA Institute Investment Series, Wiley.
+7. Glasserman, P. (2003). *Monte Carlo Methods in Financial Engineering*. Springer.
+8. Rockafellar, R. T., & Uryasev, S. (2000). Optimization of Conditional Value-at-Risk. *Journal of Risk*, 2(3), 21–41.
+9. Diebold, F. X., & Li, C. (2006). Forecasting the term structure of government bond yields. *Journal of Econometrics*, 130(2), 337–364.
+10. Merton, R. C. (1972). An Analytic Derivation of the Efficient Portfolio Frontier. *Journal of Financial and Quantitative Analysis*, 7(4), 1851–1872.
+11. Alexander, C. (2008). *Market Risk Analysis Volume IV: Value at Risk Models*. John Wiley & Sons.
+12. Hull, J. C. (2018). *Options, Futures, and Other Derivatives*. 10th ed. Pearson.
 
 ## License
 
