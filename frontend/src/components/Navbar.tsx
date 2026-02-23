@@ -12,7 +12,7 @@ export default function Navbar() {
             initial={{ y: -60, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="fixed top-4 left-1/2 -translate-x-1/2 z-50 glass"
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] glass"
             style={{
                 borderRadius: "100px",
                 padding: "0 8px",
@@ -23,7 +23,7 @@ export default function Navbar() {
                 <Link href="/" className="flex items-center gap-1 group mr-6">
                     <span
                         className="text-lg font-bold"
-                        style={{ fontFamily: "'Outfit', sans-serif", color: "var(--text-primary)" }}
+                        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "var(--text-primary)" }}
                     >
                         Opti<span className="gradient-text">Market</span>
                     </span>
@@ -50,16 +50,7 @@ export default function Navbar() {
                     >
                         Dashboard
                     </Link>
-                    <Link
-                        href="/dashboard"
-                        className="ml-2 px-5 py-2 rounded-full text-sm font-semibold text-white transition-all duration-300 hover:scale-105"
-                        style={{
-                            background: "var(--gradient-main)",
-                            boxShadow: "0 2px 12px rgba(108, 92, 231, 0.25)",
-                        }}
-                    >
-                        Launch App →
-                    </Link>
+
                 </div>
             </div>
         </motion.nav>

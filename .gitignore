@@ -36,6 +36,7 @@ market_data.csv
 # Presentation & Report (local only)
 presentation.html
 report.html
+report.docx
 
 # Gemini
 .gemini/

@@ -14,19 +14,19 @@ const fadeUp = {
 
 const features = [
   {
-    icon: "📈",
+    icon: "NS",
     title: "Smart Pricing",
     desc: "Automatically prices bonds using live US Treasury data, so you always work with up-to-date market rates.",
     accent: "#6c5ce7",
   },
   {
-    icon: "🛡️",
+    icon: "σ",
     title: "Risk Analysis",
     desc: "Understands how different bonds move together — so your portfolio stays balanced across sectors and credit ratings.",
     accent: "#fd79a8",
   },
   {
-    icon: "⚡",
+    icon: "λ",
     title: "One-Click Optimization",
     desc: "Finds the best combination of bonds that maximizes your returns while keeping risk under control — in seconds.",
     accent: "#00b894",
@@ -65,7 +65,7 @@ export default function LandingPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-5xl md:text-7xl font-black leading-tight mb-6 tracking-tight"
-            style={{ fontFamily: "'Outfit', sans-serif", color: "var(--text-primary)" }}
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "var(--text-primary)" }}
           >
             Build the <span className="gradient-text">Perfect</span>
             <br />
@@ -131,7 +131,7 @@ export default function LandingPage() {
             viewport={{ once: true, margin: "-100px" }}
             className="text-center mb-16"
           >
-            <motion.h2 variants={fadeUp} custom={0} className="text-4xl font-bold mb-4" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <motion.h2 variants={fadeUp} custom={0} className="text-4xl font-bold mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               Why <span className="gradient-text">OptiMarket</span>?
             </motion.h2>
             <motion.p variants={fadeUp} custom={1} className="text-lg" style={{ color: "var(--text-secondary)" }}>
@@ -151,12 +151,12 @@ export default function LandingPage() {
                 className="card-soft p-8 cursor-default"
               >
                 <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mb-5"
-                  style={{ background: `${f.accent}10`, border: `1px solid ${f.accent}20` }}
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold mb-5"
+                  style={{ background: `${f.accent}10`, border: `1px solid ${f.accent}20`, color: f.accent }}
                 >
                   {f.icon}
                 </div>
-                <h3 className="text-xl font-bold mb-3" style={{ fontFamily: "'Outfit', sans-serif" }}>{f.title}</h3>
+                <h3 className="text-xl font-bold mb-3" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{f.title}</h3>
                 <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                   {f.desc}
                 </p>
@@ -170,7 +170,7 @@ export default function LandingPage() {
       <section className="py-24 px-6 dot-pattern" style={{ background: "var(--bg-secondary)" }}>
         <div className="max-w-5xl mx-auto">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-16">
-            <motion.h2 variants={fadeUp} custom={0} className="text-4xl font-bold mb-4" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <motion.h2 variants={fadeUp} custom={0} className="text-4xl font-bold mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               How It <span className="gradient-text">Works</span>
             </motion.h2>
             <motion.p variants={fadeUp} custom={1} style={{ color: "var(--text-secondary)" }}>
@@ -180,9 +180,9 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { num: "1", title: "Set Your Goals", desc: "Tell us your budget, how long you want to invest, and how much risk you're comfortable with.", icon: "🎯" },
-              { num: "2", title: "We Optimize", desc: "Our engine analyzes 150 bonds across 8 sectors and finds the best allocation for your goals.", icon: "🧠" },
-              { num: "3", title: "See Results", desc: "Get a detailed breakdown with charts, allocation tables, and key performance metrics.", icon: "📊" },
+              { num: "1", title: "Set Your Goals", desc: "Tell us your budget, how long you want to invest, and how much risk you're comfortable with." },
+              { num: "2", title: "We Optimize", desc: "Our engine analyzes 150 bonds across 8 sectors and finds the best allocation for your goals." },
+              { num: "3", title: "See Results", desc: "Get a detailed breakdown with charts, allocation tables, and key performance metrics." },
             ].map((s, i) => (
               <motion.div
                 key={i}
@@ -193,12 +193,11 @@ export default function LandingPage() {
                 custom={i}
                 className="card-soft p-8 text-center"
               >
-                <div className="text-4xl mb-4">{s.icon}</div>
-                <div className="inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold text-white mb-4"
+                <div className="inline-flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold text-white mb-4"
                   style={{ background: "var(--gradient-main)" }}>
                   {s.num}
                 </div>
-                <h4 className="text-lg font-bold mb-2" style={{ fontFamily: "'Outfit', sans-serif" }}>{s.title}</h4>
+                <h4 className="text-lg font-bold mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{s.title}</h4>
                 <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{s.desc}</p>
               </motion.div>
             ))}
@@ -214,7 +213,7 @@ export default function LandingPage() {
           viewport={{ once: true }}
           className="max-w-3xl mx-auto"
         >
-          <motion.h2 variants={fadeUp} custom={0} className="text-4xl md:text-5xl font-bold mb-6" style={{ fontFamily: "'Outfit', sans-serif" }}>
+          <motion.h2 variants={fadeUp} custom={0} className="text-4xl md:text-5xl font-bold mb-6" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
             Ready to <span className="gradient-text">Invest Smarter</span>?
           </motion.h2>
           <motion.p variants={fadeUp} custom={1} className="text-lg mb-10" style={{ color: "var(--text-secondary)" }}>

@@ -101,7 +101,7 @@ export default function DashboardPage() {
         ? yieldData.data_points.maturities.map((m, i) => ({ maturity: m, yield: yieldData.data_points.rates[i] * 100 }))
         : [];
 
-    const tabs = ["📊 Overview", "📋 Trade Sheet", "📈 Analytics"];
+    const tabs = ["Overview", "Trade Sheet", "Analytics"];
 
     if (loading) {
         return (
@@ -117,7 +117,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="h-[calc(100vh-5rem)] flex overflow-hidden" style={{ background: "var(--bg-primary)" }}>
+        <div className="fixed inset-0 flex overflow-hidden" style={{ background: "var(--bg-primary)" }}>
             {/* ===== SIDEBAR ===== */}
             <motion.aside
                 initial={{ x: -300, opacity: 0 }}
@@ -127,8 +127,8 @@ export default function DashboardPage() {
                 style={{ background: "var(--bg-card)", borderRight: "1px solid var(--border-color)" }}
             >
                 <div className="mb-4">
-                    <h2 className="text-base font-bold" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                        ⚡ <span className="gradient-text">OptiMarket</span>
+                    <h2 className="text-base font-bold" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                        <span className="gradient-text">OptiMarket</span>
                     </h2>
                     <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>Bond Portfolio Optimizer</p>
                 </div>
@@ -234,23 +234,23 @@ export default function DashboardPage() {
                     <button onClick={() => setShowBondsModal(true)}
                         className="w-full py-2.5 rounded-xl text-xs font-medium transition-all"
                         style={{ border: "1px solid var(--border-color)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}>
-                        🏢 View All Bonds
+                        View All Bonds
                     </button>
                     <button onClick={handleOptimize} disabled={optimizing}
                         className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{ background: "var(--gradient-main)", boxShadow: "0 4px 20px rgba(108,92,231,0.25)" }}>
-                        ⚡ RUN OPTIMIZER
+                        RUN OPTIMIZER
                     </button>
                 </div>
             </motion.aside>
 
             {/* ===== MAIN CONTENT — Yield Curve ===== */}
-            <main className="flex-1 h-full overflow-hidden p-6 flex flex-col">
+            <main className="flex-1 h-full overflow-hidden p-6 pt-16 flex flex-col">
                 {/* Header row */}
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                         <div className="w-1 h-5 rounded-full" style={{ background: "var(--accent-primary)" }} />
-                        <h2 className="text-sm font-bold" style={{ fontFamily: "'Outfit', sans-serif" }}>Live Treasury Yield Curve</h2>
+                        <h2 className="text-sm font-bold" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Live Treasury Yield Curve</h2>
                     </div>
                     {bondsData && (
                         <div className="flex items-center gap-3 text-xs" style={{ color: "var(--text-muted)" }}>
@@ -303,7 +303,7 @@ export default function DashboardPage() {
                 {showBondsModal && bondsData && (
                     <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] flex items-start justify-center pt-8 overflow-y-auto"
+                        className="fixed inset-0 z-[100] flex items-start justify-center pt-20 overflow-y-auto"
                         style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(6px)" }}
                         onClick={(e) => { if (e.target === e.currentTarget) setShowBondsModal(false); }}
                     >
@@ -317,7 +317,7 @@ export default function DashboardPage() {
                         >
                             <div className="flex items-center justify-between px-8 py-5" style={{ borderBottom: "1px solid var(--border-color)" }}>
                                 <div>
-                                    <h2 className="text-xl font-bold" style={{ fontFamily: "'Outfit', sans-serif" }}>🏢 Bond Market</h2>
+                                    <h2 className="text-xl font-bold" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Bond Market</h2>
                                     <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                                         {bondsData.summary.total} synthetic bonds · {bondsData.summary.sectors} sectors · Avg yield: {(bondsData.summary.avg_yield * 100).toFixed(2)}%
                                     </p>
@@ -369,7 +369,7 @@ export default function DashboardPage() {
                 {showResultsModal && (
                     <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] flex items-start justify-center pt-8 overflow-y-auto"
+                        className="fixed inset-0 z-[100] flex items-start justify-center pt-20 overflow-y-auto"
                         style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(6px)" }}
                         onClick={(e) => { if (e.target === e.currentTarget && !optimizing) setShowResultsModal(false); }}
                     >
@@ -382,7 +382,7 @@ export default function DashboardPage() {
                             style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)", boxShadow: "0 24px 80px rgba(0,0,0,0.15)" }}
                         >
                             <div className="flex items-center justify-between px-8 py-5" style={{ borderBottom: "1px solid var(--border-color)" }}>
-                                <h2 className="text-xl font-bold" style={{ fontFamily: "'Outfit', sans-serif" }}>🎯 Optimization Results</h2>
+                                <h2 className="text-xl font-bold" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Optimization Results</h2>
                                 {!optimizing && (
                                     <button onClick={() => setShowResultsModal(false)}
                                         className="w-9 h-9 rounded-full flex items-center justify-center text-lg transition-all hover:scale-110"
@@ -437,7 +437,7 @@ export default function DashboardPage() {
                                         {activeTab === 0 && (
                                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-2 gap-6">
                                                 <div className="rounded-2xl p-6" style={{ background: "var(--bg-primary)", border: "1px solid var(--border-color)" }}>
-                                                    <h3 className="text-sm font-semibold mb-2" style={{ fontFamily: "'Outfit', sans-serif" }}>By Rating</h3>
+                                                    <h3 className="text-sm font-semibold mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>By Rating</h3>
                                                     <ResponsiveContainer width="100%" height={280}>
                                                         <PieChart>
                                                             <Pie data={results.allocations.by_rating} dataKey="Allocation %" nameKey="Rating"
@@ -453,7 +453,7 @@ export default function DashboardPage() {
                                                     </ResponsiveContainer>
                                                 </div>
                                                 <div className="rounded-2xl p-6" style={{ background: "var(--bg-primary)", border: "1px solid var(--border-color)" }}>
-                                                    <h3 className="text-sm font-semibold mb-2" style={{ fontFamily: "'Outfit', sans-serif" }}>By Sector</h3>
+                                                    <h3 className="text-sm font-semibold mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>By Sector</h3>
                                                     <ResponsiveContainer width="100%" height={280}>
                                                         <PieChart>
                                                             <Pie data={results.allocations.by_sector} dataKey="Allocation %" nameKey="Sector"
@@ -518,7 +518,7 @@ export default function DashboardPage() {
                                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
                                                 {frontier.length > 0 && (
                                                     <div className="rounded-2xl p-6" style={{ background: "var(--bg-primary)", border: "1px solid var(--border-color)" }}>
-                                                        <h3 className="text-sm font-semibold mb-1" style={{ fontFamily: "'Outfit', sans-serif" }}>Efficient Frontier</h3>
+                                                        <h3 className="text-sm font-semibold mb-1" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Efficient Frontier</h3>
                                                         <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>Purple = optimal portfolios · Pink = yours</p>
                                                         <ResponsiveContainer width="100%" height={280}>
                                                             <ScatterChart margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
@@ -543,7 +543,7 @@ export default function DashboardPage() {
                                                     </div>
                                                 )}
                                                 <div className="rounded-2xl p-6" style={{ background: "var(--bg-primary)", border: "1px solid var(--border-color)" }}>
-                                                    <h3 className="text-sm font-semibold mb-4" style={{ fontFamily: "'Outfit', sans-serif" }}>Allocation by Company</h3>
+                                                    <h3 className="text-sm font-semibold mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Allocation by Company</h3>
                                                     <ResponsiveContainer width="100%" height={Math.max(250, results.allocations.by_company.length * 40)}>
                                                         <BarChart data={results.allocations.by_company} layout="vertical" margin={{ left: 20, right: 30, top: 5, bottom: 5 }}>
                                                             <CartesianGrid strokeDasharray="3 3" stroke="#e2e2e8" horizontal={false} />

@@ -38,7 +38,7 @@
   body {
     background: var(--bg-primary);
     color: var(--text-primary);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     overflow-x: hidden;
   }
 
@@ -212,4 +212,10 @@
   transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 0;
+}
+
+/* Fix range slider thumb alignment */
+input[type="range"] {
+  vertical-align: middle;
+  margin: 0;
 }
