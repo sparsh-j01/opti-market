@@ -9,8 +9,11 @@ import {
 } from "recharts";
 import {
     fetchYieldCurve, fetchBonds, runOptimizer, fetchEfficientFrontier,
+    runMonteCarlo, runStressTest, runBacktest,
     YieldCurveData, BondsData, OptimizeResult, FrontierPoint,
+    MonteCarloResult, StressTestResult, BacktestResult,
 } from "@/lib/api";
+import { MonteCarloPanel, StressTestPanel, BacktestPanel } from "@/components/AnalyticsPanels";
 
 const COLORS = [
     "#6c5ce7", "#a29bfe", "#fd79a8", "#fdcb6e", "#00b894",
@@ -41,6 +44,10 @@ export default function DashboardPage() {
     const [activeTab, setActiveTab] = useState(0);
     const [showResultsModal, setShowResultsModal] = useState(false);
     const [showBondsModal, setShowBondsModal] = useState(false);
+    const [dataSource, setDataSource] = useState("real");
+    const [mcData, setMcData] = useState<MonteCarloResult | null>(null);
+    const [stressData, setStressData] = useState<StressTestResult | null>(null);
+    const [btData, setBtData] = useState<BacktestResult | null>(null);
 
     const [capital, setCapital] = useState(100000);
     const [targetDuration, setTargetDuration] = useState(5.0);
@@ -54,19 +61,22 @@ export default function DashboardPage() {
     useEffect(() => {
         async function load() {
             try {
-                const [yc, bonds] = await Promise.all([fetchYieldCurve(), fetchBonds()]);
+                const [yc, bonds] = await Promise.all([fetchYieldCurve(), fetchBonds(dataSource)]);
                 setYieldData(yc);
                 setBondsData(bonds);
             } catch (e) { console.error("Failed to load data:", e); }
             finally { setLoading(false); }
         }
         load();
-    }, []);
+    }, [dataSource]);
 
     const handleOptimize = useCallback(async () => {
         setOptimizing(true);
         setResults(null);
         setFrontier([]);
+        setMcData(null);
+        setStressData(null);
+        setBtData(null);
         setShowResultsModal(true);
         setActiveTab(0);
         try {
@@ -75,20 +85,30 @@ export default function DashboardPage() {
                 max_allocation: maxAllocation / 100, objective_type: objective,
                 risk_free_rate: riskFreeRate, max_junk_bond_allocation: maxJunk / 100,
                 max_sector_allocation: maxSector / 100, junk_bond_ratings: junkRatings,
+                data_source: dataSource,
             };
             const res = await runOptimizer(params);
             setResults(res);
-            if (objective === "Optimize Sharpe Ratio" && res.success) {
-                const { frontier: f } = await fetchEfficientFrontier({
-                    capital, max_allocation: maxAllocation / 100,
-                    max_junk_bond_allocation: maxJunk / 100, max_sector_allocation: maxSector / 100,
-                    junk_bond_ratings: junkRatings, risk_free_rate: riskFreeRate,
-                });
-                setFrontier(f);
+            if (res.success) {
+                // Run all analytics in parallel
+                const [frontierRes, mcRes, stressRes, btRes] = await Promise.all([
+                    objective === "Optimize Sharpe Ratio" ? fetchEfficientFrontier({
+                        capital, max_allocation: maxAllocation / 100,
+                        max_junk_bond_allocation: maxJunk / 100, max_sector_allocation: maxSector / 100,
+                        junk_bond_ratings: junkRatings, risk_free_rate: riskFreeRate, data_source: dataSource,
+                    }) : Promise.resolve({ frontier: [] }),
+                    runMonteCarlo({ ...params, objective_type: "Optimize Sharpe Ratio", n_simulations: 10000 }),
+                    runStressTest({ ...params, objective_type: "Optimize Sharpe Ratio" }),
+                    runBacktest({ ...params, objective_type: "Optimize Sharpe Ratio", n_periods: 12, period_type: "monthly" }),
+                ]);
+                setFrontier(frontierRes.frontier);
+                setMcData(mcRes);
+                setStressData(stressRes);
+                setBtData(btRes);
             }
         } catch (e) { console.error("Optimization failed:", e); }
         finally { setOptimizing(false); }
-    }, [targetDuration, capital, maxAllocation, objective, riskFreeRate, maxJunk, maxSector, junkRatings]);
+    }, [targetDuration, capital, maxAllocation, objective, riskFreeRate, maxJunk, maxSector, junkRatings, dataSource]);
 
     const toggleJunkRating = (rating: string) => {
         setJunkRatings(prev => prev.includes(rating) ? prev.filter(r => r !== rating) : [...prev, rating]);
@@ -101,7 +121,7 @@ export default function DashboardPage() {
         ? yieldData.data_points.maturities.map((m, i) => ({ maturity: m, yield: yieldData.data_points.rates[i] * 100 }))
         : [];
 
-    const tabs = ["Overview", "Trade Sheet", "Analytics"];
+    const tabs = ["Overview", "Trade Sheet", "Analytics", "Monte Carlo", "Stress Test", "Backtest"];
 
     if (loading) {
         return (
@@ -135,6 +155,23 @@ export default function DashboardPage() {
                 <div style={{ borderTop: "1px solid var(--border-color)" }} className="mb-4" />
 
                 <div className="flex-1 space-y-3">
+                    {/* Data Source Toggle */}
+                    <div>
+                        <label className="text-xs font-semibold uppercase tracking-wider block mb-2" style={{ color: "var(--text-secondary)" }}>Data Source</label>
+                        <div className="flex rounded-xl overflow-hidden" style={{ border: "1px solid var(--border-color)" }}>
+                            {["real", "synthetic"].map(src => (
+                                <button key={src} onClick={() => { setDataSource(src); setLoading(true); }}
+                                    className="flex-1 py-2 text-xs font-medium transition-all duration-200"
+                                    style={{
+                                        background: dataSource === src ? "#00b894" : "transparent",
+                                        color: dataSource === src ? "#fff" : "var(--text-secondary)",
+                                    }}>
+                                    {src === "real" ? "🏦 Real (FINRA)" : "🔬 Synthetic"}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     {/* Strategy */}
                     <div>
                         <label className="text-xs font-semibold uppercase tracking-wider block mb-2" style={{ color: "var(--text-secondary)" }}>Strategy</label>
@@ -561,6 +598,24 @@ export default function DashboardPage() {
                                                         </BarChart>
                                                     </ResponsiveContainer>
                                                 </div>
+                                            </motion.div>
+                                        )}
+
+                                        {activeTab === 3 && mcData && (
+                                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                                <MonteCarloPanel data={mcData} />
+                                            </motion.div>
+                                        )}
+
+                                        {activeTab === 4 && stressData && (
+                                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                                <StressTestPanel data={stressData} />
+                                            </motion.div>
+                                        )}
+
+                                        {activeTab === 5 && btData && (
+                                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                                <BacktestPanel data={btData} />
                                             </motion.div>
                                         )}
                                     </>

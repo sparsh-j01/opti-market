@@ -5,6 +5,7 @@ import random
 from scipy.optimize import curve_fit
 from functools import lru_cache
 import time
+import real_data_loader
 
 def nelson_siegel(t, beta0, beta1, beta2, lambda_):
     """Nelson-Siegel formula for realistic yield curves."""
@@ -64,11 +65,17 @@ def fetch_real_treasury_rates():
 # Simple time-based cache for bond market (1 hour TTL)
 _bond_market_cache = {"data": None, "timestamp": 0}
 
-def generate_bond_market(n_bonds=150):
+def generate_bond_market(n_bonds=150, data_source="synthetic"):
     """
-    Generates a synthetic bond market using Nelson-Siegel curve for base yields.
-    Uses a fixed seed for reproducibility (important for research paper).
+    Returns bond market data from the specified source.
+    
+    Parameters:
+        n_bonds: Number of bonds for synthetic mode
+        data_source: 'real' or 'synthetic'
     """
+    if data_source == "real":
+        return real_data_loader.load_real_bonds()
+    
     global _bond_market_cache
     now = time.time()
     if _bond_market_cache["data"] is not None and (now - _bond_market_cache["timestamp"]) < 3600:
@@ -175,4 +182,8 @@ def generate_covariance_matrix(bonds_df):
     return cov_matrix
 
 if __name__ == "__main__":
-    generate_bond_market()
+    import sys
+    source = sys.argv[1] if len(sys.argv) > 1 else "synthetic"
+    df = generate_bond_market(data_source=source)
+    print(f"Loaded {len(df)} bonds ({source} mode)")
+    print(df.head(10).to_string())

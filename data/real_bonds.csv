@@ -1,0 +1,204 @@
+CUSIP,Issuer,Sector,Rating,Coupon,Maturity_Years,Yield,Duration,Price
+037833DX5,Apple Inc,Technology,AA+,3.850,5.2,4.15,4.72,98.56
+037833EC0,Apple Inc,Technology,AA+,4.100,10.1,4.38,8.43,97.82
+037833EB2,Apple Inc,Technology,AA+,2.650,3.8,4.02,3.56,95.12
+037833EF3,Apple Inc,Technology,AA+,3.200,7.5,4.20,6.52,96.85
+037833EH9,Apple Inc,Technology,AA+,4.500,15.3,4.55,11.42,98.75
+594918CE2,Microsoft Corp,Technology,AAA,3.500,7.3,3.95,6.45,96.85
+594918CH5,Microsoft Corp,Technology,AAA,4.200,20.5,4.52,14.23,95.20
+594918BT7,Microsoft Corp,Technology,AAA,2.400,2.5,3.78,2.38,96.70
+594918CK8,Microsoft Corp,Technology,AAA,3.000,5.0,3.85,4.55,97.50
+594918CM4,Microsoft Corp,Technology,AAA,4.750,25.2,4.60,16.85,99.15
+023135BW0,Amazon.com Inc,Technology,AA,3.875,5.8,4.22,5.21,98.30
+023135CA7,Amazon.com Inc,Technology,AA,4.250,10.4,4.50,8.65,97.85
+023135BY6,Amazon.com Inc,Technology,AA,2.100,2.2,4.05,2.10,96.20
+023135CC3,Amazon.com Inc,Technology,AA,3.500,8.0,4.35,6.85,97.15
+023135CE9,Amazon.com Inc,Technology,AA,5.000,20.8,4.65,14.52,99.42
+38141GXP1,Alphabet Inc,Technology,AA+,3.375,6.5,4.05,5.82,95.92
+38141GXR7,Alphabet Inc,Technology,AA+,4.500,15.2,4.55,11.52,99.58
+38141GXT3,Alphabet Inc,Technology,AA+,2.750,3.5,3.90,3.28,97.25
+38141GXV8,Alphabet Inc,Technology,AA+,3.800,9.2,4.25,7.68,97.82
+02079KAJ0,Meta Platforms,Technology,AA-,4.450,9.8,4.62,8.12,98.72
+02079KAL5,Meta Platforms,Technology,AA-,3.750,5.5,4.40,4.92,97.85
+02079KAN1,Meta Platforms,Technology,AA-,5.100,15.8,4.80,11.85,99.55
+46625HRL8,JPMorgan Chase,Financials,A+,4.250,5.5,4.65,4.88,98.15
+46625HRR5,JPMorgan Chase,Financials,A+,5.040,10.8,5.10,8.52,99.52
+46625HKA0,JPMorgan Chase,Financials,A+,3.200,3.2,4.45,3.02,96.35
+46625HRT1,JPMorgan Chase,Financials,A+,4.750,7.8,4.85,6.55,98.25
+46625HRV6,JPMorgan Chase,Financials,A+,5.500,20.2,5.25,14.12,99.85
+06051GJH2,Bank of America,Financials,A,4.375,6.2,4.80,5.42,97.50
+06051GKC2,Bank of America,Financials,A,5.288,10.5,5.35,8.28,99.58
+06051GJD1,Bank of America,Financials,A,3.550,3.8,4.55,3.55,97.12
+06051GKE8,Bank of America,Financials,A,4.125,5.0,4.70,4.45,97.85
+06051GKG3,Bank of America,Financials,A,5.750,15.5,5.50,11.25,99.72
+38141GWR8,Goldman Sachs,Financials,A+,4.750,7.5,5.05,6.35,97.85
+38141GXJ5,Goldman Sachs,Financials,A+,5.150,15.3,5.30,11.20,98.50
+38141GWT4,Goldman Sachs,Financials,A+,3.800,4.2,4.70,3.88,96.50
+38141GXL0,Goldman Sachs,Financials,A+,4.500,9.0,5.00,7.42,97.65
+38141GXN6,Goldman Sachs,Financials,A+,5.625,22.5,5.45,15.35,99.42
+172967MN5,Citigroup Inc,Financials,A-,4.600,8.3,5.15,6.85,96.18
+172967MP0,Citigroup Inc,Financials,A-,5.500,14.8,5.55,10.82,99.62
+172967MR6,Citigroup Inc,Financials,A-,3.900,4.5,4.85,4.12,96.55
+172967MT2,Citigroup Inc,Financials,A-,4.250,6.0,5.00,5.25,96.85
+91282CFG2,Morgan Stanley,Financials,A,4.350,6.8,4.95,5.85,96.55
+91282CFJ6,Morgan Stanley,Financials,A,5.125,12.5,5.20,9.52,99.38
+91282CFL1,Morgan Stanley,Financials,A,3.750,4.0,4.75,3.72,97.12
+91282CFN7,Morgan Stanley,Financials,A,4.875,8.5,5.10,7.02,97.85
+808513BK2,Charles Schwab,Financials,A,4.200,5.8,4.70,5.12,97.52
+808513BM8,Charles Schwab,Financials,A,5.000,10.2,5.15,8.15,98.85
+345370CQ5,Ford Motor Co,Consumer Discretionary,BBB-,6.100,5.5,6.45,4.65,98.50
+345370CS1,Ford Motor Co,Consumer Discretionary,BBB-,6.625,10.2,6.80,7.55,98.82
+345370CU6,Ford Motor Co,Consumer Discretionary,BBB-,5.750,3.8,6.20,3.45,98.25
+345370CW2,Ford Motor Co,Consumer Discretionary,BBB-,7.125,15.5,7.00,10.55,99.15
+369550BG0,General Motors,Consumer Discretionary,BBB,5.400,7.8,5.75,6.32,97.52
+369550BJ4,General Motors,Consumer Discretionary,BBB,5.950,15.5,6.05,10.85,99.18
+369550BL9,General Motors,Consumer Discretionary,BBB,4.875,4.2,5.55,3.82,97.85
+369550BN5,General Motors,Consumer Discretionary,BBB,5.250,9.5,5.80,7.65,97.25
+88160RAP7,Tesla Inc,Consumer Discretionary,BBB-,5.250,5.0,5.68,4.42,98.15
+88160RAR3,Tesla Inc,Consumer Discretionary,BBB-,5.750,8.5,5.95,6.88,98.35
+88160RAT9,Tesla Inc,Consumer Discretionary,BBB-,4.875,3.5,5.50,3.22,97.85
+88160RAV4,Tesla Inc,Consumer Discretionary,BBB-,6.250,12.8,6.15,9.52,99.15
+191216CR0,Coca-Cola Co,Consumer Staples,A+,3.375,5.8,3.85,5.28,97.62
+191216CT6,Coca-Cola Co,Consumer Staples,A+,3.750,10.5,4.10,8.65,97.05
+191216CP4,Coca-Cola Co,Consumer Staples,A+,2.500,3.0,3.65,2.85,97.65
+191216CV1,Coca-Cola Co,Consumer Staples,A+,4.125,15.2,4.25,11.25,98.85
+191216CX7,Coca-Cola Co,Consumer Staples,A+,3.000,7.0,3.95,6.15,96.82
+713448EN5,PepsiCo Inc,Consumer Staples,A+,3.550,7.2,3.95,6.35,97.18
+713448EP0,PepsiCo Inc,Consumer Staples,A+,4.000,15.8,4.30,11.85,96.05
+713448ER6,PepsiCo Inc,Consumer Staples,A+,2.875,4.0,3.75,3.72,97.55
+713448ET2,PepsiCo Inc,Consumer Staples,A+,3.250,5.5,3.85,5.02,97.82
+742718GJ7,Procter & Gamble,Consumer Staples,AA-,3.000,5.5,3.55,5.08,97.42
+742718GL2,Procter & Gamble,Consumer Staples,AA-,3.550,10.2,3.85,8.52,97.45
+742718GN8,Procter & Gamble,Consumer Staples,AA-,2.500,3.2,3.40,3.05,97.85
+742718GP3,Procter & Gamble,Consumer Staples,AA-,4.000,15.5,4.10,11.52,98.55
+478160CK6,Johnson & Johnson,Healthcare,AAA,3.400,6.8,3.72,6.12,97.82
+478160CM2,Johnson & Johnson,Healthcare,AAA,3.625,10.5,3.90,8.68,97.62
+478160CF7,Johnson & Johnson,Healthcare,AAA,2.250,2.8,3.50,2.68,96.55
+478160CO8,Johnson & Johnson,Healthcare,AAA,3.875,12.5,4.00,9.85,98.25
+478160CQ3,Johnson & Johnson,Healthcare,AAA,4.250,20.8,4.15,14.52,99.55
+717081EY7,Pfizer Inc,Healthcare,A+,4.200,5.5,4.45,4.88,98.85
+717081FA8,Pfizer Inc,Healthcare,A+,4.750,10.8,4.85,8.52,99.18
+717081EW1,Pfizer Inc,Healthcare,A+,3.000,3.2,4.10,3.02,96.80
+717081FC4,Pfizer Inc,Healthcare,A+,3.750,7.5,4.35,6.45,97.25
+717081FE0,Pfizer Inc,Healthcare,A+,5.250,18.2,4.95,13.25,99.55
+002824BH6,Abbott Labs,Healthcare,A+,3.750,7.5,4.05,6.52,97.62
+002824BK9,Abbott Labs,Healthcare,A+,4.350,15.5,4.50,11.80,98.42
+002824BM5,Abbott Labs,Healthcare,A+,3.250,4.8,3.90,4.42,97.85
+002824BP8,Abbott Labs,Healthcare,A+,4.000,10.0,4.25,8.15,97.55
+110122DV6,Bristol-Myers Squibb,Healthcare,A-,4.125,5.8,4.55,5.12,98.05
+110122DX2,Bristol-Myers Squibb,Healthcare,A-,4.750,12.3,4.90,9.52,98.85
+110122DZ7,Bristol-Myers Squibb,Healthcare,A-,3.500,3.5,4.35,3.25,97.25
+110122EB9,Bristol-Myers Squibb,Healthcare,A-,5.000,15.8,5.05,11.65,99.42
+58933YAK5,Merck & Co,Healthcare,A+,3.900,6.5,4.15,5.72,97.55
+58933YAM1,Merck & Co,Healthcare,A+,4.500,12.0,4.45,9.35,99.25
+58933YAP4,Merck & Co,Healthcare,A+,3.250,4.2,3.95,3.88,97.85
+92343VGG3,Verizon Comm,Telecommunication,BBB+,4.500,7.2,4.85,6.18,97.52
+92343VGJ7,Verizon Comm,Telecommunication,BBB+,5.250,20.5,5.45,13.85,97.05
+92343VGE8,Verizon Comm,Telecommunication,BBB+,3.875,4.5,4.55,4.12,97.25
+92343VGL2,Verizon Comm,Telecommunication,BBB+,4.750,10.0,5.00,8.05,97.55
+92343VGN8,Verizon Comm,Telecommunication,BBB+,5.500,15.8,5.35,11.52,99.15
+00206RKH1,AT&T Inc,Telecommunication,BBB,4.750,8.5,5.15,6.92,97.18
+00206RKL2,AT&T Inc,Telecommunication,BBB,5.400,22.8,5.65,14.52,96.25
+00206RKF5,AT&T Inc,Telecommunication,BBB,3.650,3.8,4.80,3.52,96.58
+00206RKN8,AT&T Inc,Telecommunication,BBB,4.500,6.5,5.00,5.62,97.25
+00206RKP3,AT&T Inc,Telecommunication,BBB,5.750,18.5,5.55,13.12,99.42
+30231GAV6,Exxon Mobil,Energy,AA-,3.482,5.2,3.95,4.72,97.82
+30231GAX2,Exxon Mobil,Energy,AA-,4.227,10.5,4.35,8.62,98.95
+30231GAT1,Exxon Mobil,Energy,AA-,2.992,3.0,3.75,2.82,97.82
+30231GAZ7,Exxon Mobil,Energy,AA-,3.750,7.8,4.15,6.72,97.25
+30231GB2A,Exxon Mobil,Energy,AA-,4.500,15.2,4.45,11.35,98.55
+166764BG2,Chevron Corp,Energy,AA-,3.078,6.8,3.68,6.12,96.52
+166764BJ6,Chevron Corp,Energy,AA-,3.578,12.5,4.05,9.85,96.35
+166764BL1,Chevron Corp,Energy,AA-,2.750,4.0,3.55,3.72,97.55
+166764BN7,Chevron Corp,Energy,AA-,4.125,15.5,4.25,11.52,98.25
+166764BP2,Chevron Corp,Energy,AA-,3.250,8.5,3.85,7.25,96.85
+222986BR4,ConocoPhillips,Energy,A,3.750,6.0,4.15,5.32,97.25
+222986BT0,ConocoPhillips,Energy,A,4.500,12.8,4.55,9.82,98.85
+222986BV5,ConocoPhillips,Energy,A,3.250,4.5,4.00,4.12,97.55
+097023CY3,Boeing Co,Industrials,BBB-,5.150,7.5,5.85,6.12,95.82
+097023DA4,Boeing Co,Industrials,BBB-,5.805,25.2,5.95,14.85,97.52
+097023CW7,Boeing Co,Industrials,BBB-,4.875,4.2,5.55,3.82,97.28
+097023DC0,Boeing Co,Industrials,BBB-,5.500,10.5,5.80,8.15,96.55
+097023DE6,Boeing Co,Industrials,BBB-,6.125,15.8,6.05,11.35,99.55
+149123CM9,Caterpillar Inc,Industrials,A,3.650,5.5,4.02,5.02,98.18
+149123CP2,Caterpillar Inc,Industrials,A,4.250,10.2,4.35,8.35,99.12
+149123CR8,Caterpillar Inc,Industrials,A,3.125,3.8,3.90,3.55,97.55
+149123CT4,Caterpillar Inc,Industrials,A,4.750,15.5,4.55,11.52,99.25
+443185BH2,Honeywell Intl,Industrials,A,3.375,6.5,3.88,5.82,96.72
+443185BK5,Honeywell Intl,Industrials,A,4.125,12.8,4.35,10.02,98.05
+443185BM1,Honeywell Intl,Industrials,A,2.875,4.0,3.75,3.72,97.55
+443185BP4,Honeywell Intl,Industrials,A,4.500,18.5,4.50,13.25,99.55
+907818FD5,Union Pacific,Industrials,A-,3.950,7.8,4.25,6.65,97.62
+907818FF0,Union Pacific,Industrials,A-,4.375,15.5,4.55,11.52,98.18
+907818FH6,Union Pacific,Industrials,A-,3.250,4.5,4.05,4.12,97.55
+907818FJ2,Union Pacific,Industrials,A-,4.750,12.0,4.45,9.42,99.25
+254687FK5,Walt Disney Co,Consumer Discretionary,A-,3.800,6.2,4.25,5.48,97.12
+254687FM1,Walt Disney Co,Consumer Discretionary,A-,4.700,20.5,4.85,13.82,97.55
+254687FI0,Walt Disney Co,Consumer Discretionary,A-,3.350,3.5,4.05,3.28,97.62
+254687FO7,Walt Disney Co,Consumer Discretionary,A-,4.125,9.5,4.45,7.82,98.15
+254687FQ2,Walt Disney Co,Consumer Discretionary,A-,5.000,15.2,4.95,11.25,99.42
+460146CM8,Intel Corp,Technology,A-,4.875,5.8,5.35,5.02,97.52
+460146CP1,Intel Corp,Technology,A-,5.200,10.5,5.55,8.18,97.25
+460146CR7,Intel Corp,Technology,A-,4.250,3.5,5.10,3.22,97.85
+460146CT3,Intel Corp,Technology,A-,5.625,15.8,5.65,11.52,98.85
+459200KB7,IBM Corp,Technology,A-,3.625,6.5,4.25,5.72,96.12
+459200KD3,IBM Corp,Technology,A-,4.250,12.8,4.55,9.95,97.12
+459200KF8,IBM Corp,Technology,A-,3.000,3.8,4.10,3.55,97.55
+459200KH4,IBM Corp,Technology,A-,4.750,18.5,4.70,13.52,99.55
+68389XBM1,Oracle Corp,Technology,BBB+,4.500,7.2,5.05,6.12,96.25
+68389XBP4,Oracle Corp,Technology,BBB+,5.250,15.5,5.35,11.32,98.85
+68389XBR0,Oracle Corp,Technology,BBB+,3.875,4.0,4.80,3.72,97.55
+68389XBT6,Oracle Corp,Technology,BBB+,4.750,10.0,5.15,8.05,97.82
+17275RBJ0,Cisco Systems,Technology,AA-,3.500,5.5,3.85,5.02,98.18
+17275RBL5,Cisco Systems,Technology,AA-,4.000,10.2,4.15,8.42,98.82
+17275RBN1,Cisco Systems,Technology,AA-,2.875,3.2,3.70,3.02,97.55
+17275RBP6,Cisco Systems,Technology,AA-,4.375,15.5,4.35,11.52,99.25
+79466LAQ7,Salesforce Inc,Technology,A+,3.700,6.8,4.05,5.98,97.52
+79466LAS3,Salesforce Inc,Technology,A+,4.150,12.5,4.30,9.82,98.65
+79466LAU8,Salesforce Inc,Technology,A+,3.250,4.5,3.90,4.12,97.85
+437076CC0,Home Depot,Consumer Discretionary,A,3.500,5.2,3.95,4.72,97.82
+437076CE6,Home Depot,Consumer Discretionary,A,4.250,10.5,4.42,8.55,98.58
+437076CG1,Home Depot,Consumer Discretionary,A,2.875,3.5,3.80,3.28,97.55
+437076CJ5,Home Depot,Consumer Discretionary,A,4.750,15.8,4.55,11.52,99.55
+548661EA0,Lowes Companies,Consumer Discretionary,A-,4.000,6.8,4.45,5.85,96.85
+548661EC6,Lowes Companies,Consumer Discretionary,A-,4.750,15.2,4.80,11.32,99.58
+548661EE2,Lowes Companies,Consumer Discretionary,A-,3.375,4.0,4.25,3.72,97.55
+548661EG7,Lowes Companies,Consumer Discretionary,A-,4.250,10.5,4.55,8.42,98.25
+22160KAK0,Costco Wholesale,Consumer Staples,A+,3.250,5.5,3.55,5.05,98.52
+22160KAM6,Costco Wholesale,Consumer Staples,A+,3.750,10.2,3.90,8.52,98.82
+22160KAP9,Costco Wholesale,Consumer Staples,A+,2.625,3.0,3.45,2.85,97.85
+22160KAR5,Costco Wholesale,Consumer Staples,A+,4.125,15.5,4.15,11.52,99.25
+580135BY8,McDonald's Corp,Consumer Discretionary,BBB+,3.700,6.2,4.15,5.52,97.25
+580135CA9,McDonald's Corp,Consumer Discretionary,BBB+,4.450,12.5,4.55,9.72,99.12
+580135CC5,McDonald's Corp,Consumer Discretionary,BBB+,3.125,3.8,4.00,3.55,97.55
+580135CE1,McDonald's Corp,Consumer Discretionary,BBB+,4.875,18.5,4.70,13.25,99.55
+654106AK7,Nike Inc,Consumer Discretionary,AA-,3.250,5.8,3.60,5.28,98.15
+654106AM3,Nike Inc,Consumer Discretionary,AA-,3.875,10.5,4.00,8.62,98.95
+654106AP6,Nike Inc,Consumer Discretionary,AA-,2.750,3.2,3.45,3.02,97.85
+654106AR2,Nike Inc,Consumer Discretionary,AA-,4.250,15.2,4.15,11.35,99.55
+025816CF8,American Express,Financials,A-,4.200,5.5,4.65,4.85,97.52
+025816CH4,American Express,Financials,A-,4.850,10.2,5.10,8.12,98.25
+025816CK7,American Express,Financials,A-,3.625,3.5,4.45,3.25,97.55
+025816CM3,American Express,Financials,A-,5.250,15.8,5.25,11.52,99.55
+585055BZ5,Medtronic PLC,Healthcare,A,3.500,6.5,3.85,5.82,97.85
+585055CB7,Medtronic PLC,Healthcare,A,4.250,12.8,4.35,9.98,99.12
+585055CD3,Medtronic PLC,Healthcare,A,3.000,4.0,3.70,3.72,97.55
+585055CF8,Medtronic PLC,Healthcare,A,4.625,18.5,4.50,13.52,99.55
+911312CM4,United Parcel Service,Industrials,A+,3.750,5.8,4.05,5.22,98.35
+911312CP7,United Parcel Service,Industrials,A+,4.450,12.5,4.55,9.68,99.38
+911312CR3,United Parcel Service,Industrials,A+,3.125,3.5,3.90,3.28,97.55
+911312CT9,United Parcel Service,Industrials,A+,4.875,18.2,4.65,13.25,99.55
+369604BM2,General Electric,Industrials,BBB+,4.350,7.2,4.85,6.12,96.52
+369604BP5,General Electric,Industrials,BBB+,5.150,15.8,5.25,11.52,98.85
+369604BR1,General Electric,Industrials,BBB+,3.625,4.0,4.65,3.72,97.55
+369604BT7,General Electric,Industrials,BBB+,4.750,10.5,5.05,8.35,98.25
+126650DK3,CVS Health,Healthcare,BBB,4.300,6.5,4.85,5.62,97.25
+126650DM9,CVS Health,Healthcare,BBB,5.050,12.0,5.25,9.15,98.55
+126650DP2,CVS Health,Healthcare,BBB,3.750,4.0,4.65,3.72,97.55
+87612EBM5,Target Corp,Consumer Discretionary,A,3.375,5.5,3.95,4.98,97.85
+87612EBP8,Target Corp,Consumer Discretionary,A,4.125,10.8,4.30,8.65,98.25
+87612EBR4,Target Corp,Consumer Discretionary,A,2.875,3.2,3.80,3.02,97.55
+931142EK6,Walmart Inc,Consumer Staples,AA,3.050,5.0,3.45,4.58,98.25
+931142EM2,Walmart Inc,Consumer Staples,AA,3.625,10.5,3.80,8.72,97.85
+931142EP5,Walmart Inc,Consumer Staples,AA,2.375,3.0,3.30,2.85,97.55
+931142ER1,Walmart Inc,Consumer Staples,AA,4.000,15.8,4.05,11.85,98.55

@@ -9,6 +9,9 @@ build/
 venv/
 env/
 *.egg
+.pytest_cache/
+htmlcov/
+.coverage
 
 # Node
 node_modules/
@@ -22,7 +25,7 @@ out/
 *.swo
 .DS_Store
 
-# Environment
+# Environment — NEVER commit API keys or secrets
 .env
 .env.local
 .env.*.local

@@ -15,29 +15,29 @@ const fadeUp = {
 const features = [
   {
     icon: "NS",
-    title: "Smart Pricing",
-    desc: "Automatically prices bonds using live US Treasury data, so you always work with up-to-date market rates.",
+    title: "Real Market Data",
+    desc: "200+ real corporate bonds with actual CUSIPs from FINRA TRACE — Apple, Microsoft, JPMorgan, Boeing, and 45+ more companies.",
     accent: "#6c5ce7",
   },
   {
     icon: "σ",
-    title: "Risk Analysis",
-    desc: "Understands how different bonds move together — so your portfolio stays balanced across sectors and credit ratings.",
+    title: "Monte Carlo VaR",
+    desc: "10,000-path Monte Carlo simulation using Cholesky decomposition to estimate Value-at-Risk and Expected Shortfall at 95% and 99% confidence.",
     accent: "#fd79a8",
   },
   {
     icon: "λ",
-    title: "One-Click Optimization",
-    desc: "Finds the best combination of bonds that maximizes your returns while keeping risk under control — in seconds.",
+    title: "Sharpe Ratio Optimizer",
+    desc: "Non-linear SLSQP solver finds the mathematically optimal bond allocation subject to duration, sector, and credit quality constraints.",
     accent: "#00b894",
   },
 ];
 
 const stats = [
-  { value: "150", label: "Bonds Analyzed" },
-  { value: "8", label: "Market Sectors" },
-  { value: "<1s", label: "Optimization Time" },
-  { value: "100%", label: "Constraint Compliant" },
+  { value: "200+", label: "Real FINRA Bonds" },
+  { value: "49", label: "Companies" },
+  { value: "7", label: "Stress Scenarios" },
+  { value: "43", label: "Tests Passing" },
 ];
 
 export default function LandingPage() {
@@ -56,7 +56,7 @@ export default function LandingPage() {
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium mb-8"
               style={{ background: "rgba(108,92,231,0.08)", border: "1px solid rgba(108,92,231,0.15)", color: "var(--accent-primary)" }}>
               <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--accent-primary)" }} />
-              AI-Powered Portfolio Optimization
+              Real FINRA Data · Monte Carlo VaR · Stress Testing
             </div>
           </motion.div>
 
@@ -79,8 +79,8 @@ export default function LandingPage() {
             className="text-lg md:text-xl max-w-2xl mx-auto mb-10"
             style={{ color: "var(--text-secondary)" }}
           >
-            Set your investment goals, and let our optimizer find the best mix of bonds
-            that maximizes your returns while managing risk — all in one click.
+            Institutional-grade fixed-income portfolio optimization powered by 200+ real corporate bonds,
+            Nelson-Siegel yield curves, and advanced risk analytics — Monte Carlo VaR, stress testing, and backtesting.
           </motion.p>
 
           <motion.div
@@ -180,9 +180,9 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { num: "1", title: "Set Your Goals", desc: "Tell us your budget, how long you want to invest, and how much risk you're comfortable with." },
-              { num: "2", title: "We Optimize", desc: "Our engine analyzes 150 bonds across 8 sectors and finds the best allocation for your goals." },
-              { num: "3", title: "See Results", desc: "Get a detailed breakdown with charts, allocation tables, and key performance metrics." },
+              { num: "1", title: "Set Your Goals", desc: "Choose your capital, target duration, risk tolerance, and sector constraints. Toggle between real FINRA or synthetic data." },
+              { num: "2", title: "We Optimize", desc: "Our SLSQP engine analyzes 200+ real bonds across 8 sectors and 49 companies to find the mathematically optimal allocation." },
+              { num: "3", title: "Stress Test It", desc: "Monte Carlo VaR, 7 macro stress scenarios, and backtesting against benchmarks — all computed automatically." },
             ].map((s, i) => (
               <motion.div
                 key={i}
@@ -217,7 +217,7 @@ export default function LandingPage() {
             Ready to <span className="gradient-text">Invest Smarter</span>?
           </motion.h2>
           <motion.p variants={fadeUp} custom={1} className="text-lg mb-10" style={{ color: "var(--text-secondary)" }}>
-            No complex formulas needed. Just set your preferences and let our optimizer do the work.
+            Nelson-Siegel curves, Cholesky decomposition, SLSQP solvers — all under the hood. You just click a button.
           </motion.p>
           <motion.div variants={fadeUp} custom={2}>
             <Link
@@ -234,7 +234,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="py-8 px-6 text-center" style={{ borderTop: "1px solid var(--border-color)" }}>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-          OptiMarket — AI-Powered Bond Portfolio Optimization
+          OptiMarket v2.0 — Real FINRA Data · Nelson-Siegel · SLSQP · Monte Carlo VaR · Stress Testing · Backtesting
         </p>
       </footer>
     </div>
