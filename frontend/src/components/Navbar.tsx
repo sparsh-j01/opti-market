@@ -41,6 +41,16 @@ export default function Navbar() {
                         Home
                     </Link>
                     <Link
+                        href="/learn"
+                        className="px-4 py-2 rounded-full text-sm font-medium transition-all duration-200"
+                        style={{
+                            background: pathname === "/learn" ? "rgba(108, 92, 231, 0.08)" : "transparent",
+                            color: pathname === "/learn" ? "var(--accent-primary)" : "var(--text-secondary)",
+                        }}
+                    >
+                        Learn
+                    </Link>
+                    <Link
                         href="/dashboard"
                         className="px-4 py-2 rounded-full text-sm font-medium transition-all duration-200"
                         style={{
