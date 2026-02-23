@@ -12,37 +12,51 @@ export default function Navbar() {
             initial={{ y: -60, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="fixed top-0 left-0 right-0 z-50 glass"
-            style={{ borderBottom: "1px solid rgba(42, 42, 106, 0.3)" }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-50 glass"
+            style={{
+                borderRadius: "100px",
+                padding: "0 8px",
+                boxShadow: "0 4px 30px rgba(0, 0, 0, 0.06)",
+            }}
         >
-            <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-                <Link href="/" className="flex items-center gap-2 group">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
-                        style={{ background: "linear-gradient(135deg, #00d2ff, #3a7bd5)" }}>
-                        📈
-                    </div>
-                    <span className="text-lg font-bold gradient-text">OptiMarket</span>
+            <div className="flex items-center gap-1 h-14 px-4">
+                <Link href="/" className="flex items-center gap-1 group mr-6">
+                    <span
+                        className="text-lg font-bold"
+                        style={{ fontFamily: "'Outfit', sans-serif", color: "var(--text-primary)" }}
+                    >
+                        Opti<span className="gradient-text">Market</span>
+                    </span>
                 </Link>
 
-                <div className="flex items-center gap-8">
+                <div className="flex items-center gap-1">
                     <Link
                         href="/"
-                        className={`text-sm font-medium transition-colors duration-200 ${pathname === "/" ? "text-[#00d2ff]" : "text-[#8888bb] hover:text-[#e8e8ff]"
-                            }`}
+                        className="px-4 py-2 rounded-full text-sm font-medium transition-all duration-200"
+                        style={{
+                            background: pathname === "/" ? "rgba(108, 92, 231, 0.08)" : "transparent",
+                            color: pathname === "/" ? "var(--accent-primary)" : "var(--text-secondary)",
+                        }}
                     >
                         Home
                     </Link>
                     <Link
                         href="/dashboard"
-                        className={`text-sm font-medium transition-colors duration-200 ${pathname === "/dashboard" ? "text-[#00d2ff]" : "text-[#8888bb] hover:text-[#e8e8ff]"
-                            }`}
+                        className="px-4 py-2 rounded-full text-sm font-medium transition-all duration-200"
+                        style={{
+                            background: pathname === "/dashboard" ? "rgba(108, 92, 231, 0.08)" : "transparent",
+                            color: pathname === "/dashboard" ? "var(--accent-primary)" : "var(--text-secondary)",
+                        }}
                     >
                         Dashboard
                     </Link>
                     <Link
                         href="/dashboard"
-                        className="px-5 py-2 rounded-lg text-sm font-semibold text-white transition-all duration-300 hover:scale-105 hover:shadow-[0_4px_20px_rgba(0,210,255,0.3)]"
-                        style={{ background: "linear-gradient(135deg, #3a7bd5, #00d2ff)" }}
+                        className="ml-2 px-5 py-2 rounded-full text-sm font-semibold text-white transition-all duration-300 hover:scale-105"
+                        style={{
+                            background: "var(--gradient-main)",
+                            boxShadow: "0 2px 12px rgba(108, 92, 231, 0.25)",
+                        }}
                     >
                         Launch App →
                     </Link>
