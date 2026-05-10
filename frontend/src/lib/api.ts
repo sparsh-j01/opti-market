@@ -1,4 +1,26 @@
-const API_BASE = "http://localhost:8000";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+
+// Render free tier cold-starts in 30-60s when idle. Default 75s.
+// Override per-call by passing a custom signal to the fetch wrapper.
+const DEFAULT_TIMEOUT_MS = 75_000;
+
+async function apiFetch(input: string, init: RequestInit = {}): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (err) {
+    if ((err as Error).name === "AbortError") {
+      throw new Error(
+        "Backend took too long to respond. The free-tier server may be cold-starting — please try again in 10-30 seconds.",
+      );
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 export interface YieldCurveData {
   ns_params: {
@@ -197,19 +219,19 @@ export interface BacktestResult {
 // API functions
 
 export async function fetchYieldCurve(): Promise<YieldCurveData> {
-  const res = await fetch(`${API_BASE}/api/yield-curve`);
+  const res = await apiFetch(`${API_BASE}/api/yield-curve`);
   if (!res.ok) throw new Error("Failed to fetch yield curve");
   return res.json();
 }
 
 export async function fetchBonds(source: string = "real"): Promise<BondsData> {
-  const res = await fetch(`${API_BASE}/api/bonds?source=${source}`);
+  const res = await apiFetch(`${API_BASE}/api/bonds?source=${source}`);
   if (!res.ok) throw new Error("Failed to fetch bonds");
   return res.json();
 }
 
 export async function runOptimizer(params: OptimizeParams): Promise<OptimizeResult> {
-  const res = await fetch(`${API_BASE}/api/optimize`, {
+  const res = await apiFetch(`${API_BASE}/api/optimize`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(params),
@@ -221,7 +243,7 @@ export async function runOptimizer(params: OptimizeParams): Promise<OptimizeResu
 export async function fetchEfficientFrontier(
   params: Omit<OptimizeParams, 'target_duration' | 'objective_type'>
 ): Promise<{ frontier: FrontierPoint[] }> {
-  const res = await fetch(`${API_BASE}/api/efficient-frontier`, {
+  const res = await apiFetch(`${API_BASE}/api/efficient-frontier`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(params),
@@ -234,7 +256,7 @@ export async function runMonteCarlo(params: OptimizeParams & {
   n_simulations?: number;
   time_horizon_days?: number;
 }): Promise<MonteCarloResult> {
-  const res = await fetch(`${API_BASE}/api/monte-carlo`, {
+  const res = await apiFetch(`${API_BASE}/api/monte-carlo`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(params),
@@ -246,7 +268,7 @@ export async function runMonteCarlo(params: OptimizeParams & {
 export async function runStressTest(params: OptimizeParams & {
   scenarios?: string[];
 }): Promise<StressTestResult> {
-  const res = await fetch(`${API_BASE}/api/stress-test`, {
+  const res = await apiFetch(`${API_BASE}/api/stress-test`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(params),
@@ -259,7 +281,7 @@ export async function runBacktest(params: OptimizeParams & {
   n_periods?: number;
   period_type?: string;
 }): Promise<BacktestResult> {
-  const res = await fetch(`${API_BASE}/api/backtest`, {
+  const res = await apiFetch(`${API_BASE}/api/backtest`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(params),

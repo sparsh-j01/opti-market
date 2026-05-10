@@ -37,7 +37,7 @@ const stats = [
   { value: "200+", label: "Real FINRA Bonds" },
   { value: "49", label: "Companies" },
   { value: "7", label: "Stress Scenarios" },
-  { value: "43", label: "Tests Passing" },
+  { value: "47", label: "Tests Passing" },
 ];
 
 export default function LandingPage() {

@@ -1,7 +1,7 @@
 <p align="center">
   <h1 align="center">OptiMarket</h1>
   <p align="center">
-    <strong>AI-Powered Bond Portfolio Optimization with Real Market Data</strong><br>
+    <strong>Quantitative Bond Portfolio Optimization with Real Market Data</strong><br>
     Nelson-Siegel Yield Curve · Covariance Risk Engine · SLSQP Optimization · Monte Carlo VaR · Stress Testing
   </p>
   <p align="center">
@@ -12,10 +12,22 @@
     <img src="https://img.shields.io/badge/SciPy-8CAAE6?logo=scipy&logoColor=white" alt="SciPy">
     <img src="https://img.shields.io/badge/FINRA%20TRACE-Data-blue" alt="FINRA">
     <img src="https://img.shields.io/badge/FRED%20API-Yields-orange" alt="FRED">
-    <img src="https://img.shields.io/badge/43%20Tests-Passing-brightgreen" alt="Tests">
+    <img src="https://img.shields.io/badge/47%20Tests-Passing-brightgreen" alt="Tests">
     <img src="https://img.shields.io/badge/License-MIT-green" alt="License">
   </p>
 </p>
+
+---
+
+## Live Demo
+
+- **Frontend:** _coming soon_ — Vercel deploy URL will go here
+- **Backend API:** _coming soon_ — Render deploy URL will go here
+- **Health check:** `/api/health`
+
+> The backend runs on Render's free tier and **cold-starts in 30-60s**
+> after idle. The frontend handles this with a 75s fetch timeout and a
+> friendly retry message.
 
 ---
 
@@ -45,7 +57,8 @@ OptiMarket is a full-stack bond portfolio optimization platform that constructs 
 - **Backtesting** — Optimized vs. equal-weight vs. risk-free benchmark comparison
 - **Learning Roadmap** — Interactive 4-phase educational roadmap covering 21 quant finance concepts with sticky navigation and detail modals
 - **Premium Dashboard** — Light-theme glassmorphism with Framer Motion animations
-- **43 Unit Tests** — Full test coverage for optimizer, data loader, and risk engine
+- **47 Unit Tests** — Full test coverage including 4 closed-form correctness tests for the optimizer
+- **Production Hardening** — Per-IP rate limiting (slowapi), env-driven CORS, fetch timeouts for free-tier cold starts
 
 ## Tech Stack
 
@@ -56,35 +69,60 @@ OptiMarket is a full-stack bond portfolio optimization platform that constructs 
 | **Data** | FINRA TRACE (real bonds) · Yahoo Finance / FRED API (live Treasury yields) |
 | **Optimization** | SciPy `linprog` (LP) · SciPy `minimize` SLSQP (NLP) |
 | **Risk Analytics** | Monte Carlo (Cholesky) · Stress Testing · Backtesting |
-| **Testing** | pytest (43 tests) |
+| **Testing** | pytest (47 tests, 4 closed-form correctness checks) |
+| **Hosting** | Vercel (frontend) · Render (FastAPI backend) |
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Next.js Frontend                     │
-│  Landing Page · Dashboard · Learn Roadmap               │
-│  Monte Carlo · Stress Test · Backtest · Trade Sheet     │
-│                   (Port 3000)                           │
-└──────────────────────┬──────────────────────────────────┘
-                       │ REST API (JSON)
-┌──────────────────────▼──────────────────────────────────┐
-│                   FastAPI Backend                        │
-│  /api/yield-curve · /api/bonds · /api/optimize          │
-│  /api/efficient-frontier · /api/monte-carlo             │
-│  /api/stress-test · /api/backtest                       │
-│                   (Port 8000)                           │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-    ┌──────────────────┼──────────────────┐
-    ▼                  ▼                  ▼
- data_loader.py    brain.py          risk_engine.py
- Nelson-Siegel     SLSQP Optimizer   Monte Carlo VaR
- Real/Synthetic    Covariance Matrix  Stress Testing
- Bond Data         Efficient Frontier Backtesting
+```mermaid
+flowchart TB
+    User([User Browser])
+
+    subgraph Vercel["Vercel · Next.js Frontend"]
+        Landing["Landing<br/>page.tsx"]
+        Dashboard["Dashboard<br/>/dashboard"]
+        Learn["Learn Roadmap<br/>/learn"]
+        APIClient["api.ts<br/>Typed client + 75s timeout"]
+    end
+
+    subgraph Render["Render · FastAPI Backend"]
+        Server["server.py<br/>9 endpoints + slowapi rate limit"]
+        Brain["brain.py<br/>SLSQP / linprog optimizer"]
+        DataLoader["data_loader.py<br/>Nelson-Siegel + synthetic universe"]
+        RealData["real_data_loader.py<br/>FINRA TRACE CSV + FRED"]
+        Risk["risk_engine.py<br/>Monte Carlo · Stress · Backtest"]
+    end
+
+    YFinance[("Yahoo Finance<br/>Live Treasury rates")]
+    FRED[("FRED API<br/>optional credit spreads")]
+    CSV[("data/real_bonds.csv<br/>203 real bonds")]
+
+    User --> Vercel
+    APIClient -->|REST + JSON| Server
+    Server --> Brain
+    Server --> DataLoader
+    Server --> RealData
+    Server --> Risk
+    Brain --> DataLoader
+    Risk --> DataLoader
+    DataLoader --> YFinance
+    RealData --> FRED
+    RealData --> CSV
 ```
 
+**One-paragraph tour.** The browser hits the Next.js frontend on Vercel. Each
+analytics tab calls the typed `api.ts` client, which forwards the request to
+the FastAPI backend on Render. `server.py` is the only entry point — it
+delegates: yield-curve fitting and synthetic-universe generation to
+`data_loader.py`, real bond loading to `real_data_loader.py`, constrained
+optimization (LP and SLSQP) to `brain.py`, and Monte Carlo / stress / backtest
+to `risk_engine.py`. Yahoo Finance feeds live Treasury yields; the bundled
+CSV provides 203 real corporate bonds with actual CUSIPs.
+
 ## Mathematical Pipeline
+
+> **For the deeper write-up** — derivations, intuition, and references for
+> every component — see [**MATH.md**](MATH.md).
 
 ### 1. Nelson-Siegel Yield Curve
 
@@ -145,6 +183,19 @@ npm install
 cd ..
 ```
 
+### Local environment files (optional)
+
+For local development the defaults work without any env config. If you want
+to override the backend URL or CORS origins:
+
+```bash
+# Frontend
+cp frontend/.env.local.example frontend/.env.local
+
+# Backend
+cp .env.example .env
+```
+
 ### Running the Application
 
 ```bash
@@ -159,13 +210,49 @@ npm run dev
 
 Then open **http://localhost:3000** in your browser.
 
-> **No API keys or environment variables required.** Everything works out of the box.
+> **No API keys required by default.** Yahoo Finance is used for Treasury
+> rates with sensible fallbacks. FRED API key is optional for credit-spread
+> enrichment.
 
 ### Running Tests
 
 ```bash
 python -m pytest tests/ -v
 ```
+
+47 tests cover the optimizer (including 4 closed-form correctness tests
+that verify the LP/SLSQP wiring against known answers), data loaders, and
+risk engine.
+
+## Deployment
+
+The repo is split for the standard "frontend on Vercel, FastAPI on Render"
+pattern.
+
+### Backend → Render
+1. New + → Web Service → connect this repo
+2. Root Directory: *(blank)* | Runtime: Python 3 | Build: `pip install -r requirements.txt`
+3. Start Command: `uvicorn server:app --host 0.0.0.0 --port $PORT`
+4. Add env var `ALLOWED_ORIGINS` once the frontend is deployed (see Step 3 below)
+
+`runtime.txt` pins Python 3.11.9. `/api/health` is exempt from rate
+limits so Render's health probes don't burn quota.
+
+### Frontend → Vercel
+1. Add New → Project → import this repo
+2. **Root Directory: `frontend`** (critical — Vercel must build from the subdir)
+3. Env var: `NEXT_PUBLIC_API_BASE_URL` = your Render URL (no trailing slash)
+
+### Wire CORS
+Once the Vercel URL is live, set `ALLOWED_ORIGINS` on Render to that URL
+(comma-separated if you have multiple domains). Render auto-redeploys.
+
+### Rate limits
+Per-IP, free tier protection:
+- `/api/yield-curve` — 30/min
+- `/api/bonds`, `/api/stress-scenarios` — 60/min
+- `/api/optimize`, `/api/stress-test` — 20/min
+- `/api/efficient-frontier`, `/api/monte-carlo`, `/api/backtest` — 10/min
 
 ## API Endpoints
 
@@ -185,16 +272,19 @@ python -m pytest tests/ -v
 
 ```
 opti-market/
-├── server.py              # FastAPI backend (9 endpoints)
+├── server.py              # FastAPI backend (9 endpoints, slowapi rate limit)
 ├── brain.py               # Optimization engine (linprog + SLSQP)
-├── data_loader.py         # Nelson-Siegel fitting + bond generation
+├── data_loader.py         # Nelson-Siegel fitting + synthetic universe
 ├── real_data_loader.py    # FINRA TRACE + FRED API data loader
 ├── risk_engine.py         # Monte Carlo, stress testing, backtesting
 ├── requirements.txt       # Python dependencies
+├── runtime.txt            # Python version pin (Render)
+├── .env.example           # Backend env template (ALLOWED_ORIGINS)
+├── MATH.md                # Mathematical foundations & references
 ├── data/
-│   └── real_bonds.csv     # 200+ real corporate bonds (CUSIPs)
+│   └── real_bonds.csv     # 203 real corporate bonds (CUSIPs)
 ├── tests/
-│   ├── test_brain.py      # 16 optimization tests
+│   ├── test_brain.py      # 20 optimizer tests (4 closed-form correctness)
 │   ├── test_data_loader.py # 15 data loading tests
 │   └── test_risk_engine.py # 12 risk analytics tests
 └── frontend/
@@ -212,6 +302,7 @@ opti-market/
     │   │   └── AnalyticsPanels.tsx # MC, Stress, Backtest panels
     │   └── lib/
     │       └── api.ts             # Typed API client
+    ├── .env.local.example  # Frontend env template (NEXT_PUBLIC_API_BASE_URL)
     ├── package.json
     └── tsconfig.json
 ```

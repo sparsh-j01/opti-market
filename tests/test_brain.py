@@ -160,3 +160,119 @@ class TestEfficientFrontier:
             assert "Yield" in frontier[0]
             assert "Volatility" in frontier[0]
             assert "Sharpe Ratio" in frontier[0]
+
+
+class TestOptimizerKnownAnswers:
+    """
+    Closed-form sanity checks: when the answer is mathematically forced by
+    the constraints, the optimizer must return it. These guard against
+    silent regressions in the LP/SLSQP wiring.
+    """
+
+    def test_max_yield_picks_highest_yielding_when_unconstrained(self):
+        """
+        Two bonds, identical duration, no junk/sector caps. Maximize Yield
+        should put all weight on the higher-yielding bond.
+        """
+        df = pd.DataFrame({
+            "Bond_ID": ["LO", "HI"],
+            "Company": ["A", "B"],
+            "Sector": ["Technology", "Financials"],
+            "Rating": ["AAA", "AAA"],
+            "Duration": [5.0, 5.0],
+            "Yield": [0.03, 0.06],
+            "Volatility": [0.05, 0.05],
+            "Price": [100.0, 100.0],
+        })
+        result_df, metrics = brain.run_solver(
+            df, target_duration=5.0, capital=10000,
+            max_allocation=1.0, max_sector_allocation=1.0,
+            objective_type="Maximize Yield",
+        )
+        assert result_df is not None
+        # Highest-yield bond should dominate the portfolio
+        hi_alloc = result_df.loc[result_df["Bond_ID"] == "HI", "Allocation %"].sum()
+        assert hi_alloc > 99.0
+        # Portfolio yield should equal the higher bond's yield (within tolerance)
+        assert abs(metrics["Portfolio Yield"] - 0.06) < 1e-3
+
+    def test_duration_constraint_forces_unique_blend(self):
+        """
+        Two bonds with durations 2 and 8. Target duration 5 forces 50/50
+        regardless of objective (only feasible weighting given Σw=1).
+        """
+        df = pd.DataFrame({
+            "Bond_ID": ["SHORT", "LONG"],
+            "Company": ["A", "B"],
+            "Sector": ["Technology", "Financials"],
+            "Rating": ["AAA", "AAA"],
+            "Duration": [2.0, 8.0],
+            "Yield": [0.04, 0.05],
+            "Volatility": [0.05, 0.07],
+            "Price": [100.0, 100.0],
+        })
+        result_df, metrics = brain.run_solver(
+            df, target_duration=5.0, capital=10000,
+            max_allocation=1.0, max_sector_allocation=1.0,
+            objective_type="Maximize Yield",
+        )
+        assert result_df is not None
+        # Each bond must be ~50% — closed-form solution
+        for bond_id in ["SHORT", "LONG"]:
+            alloc = result_df.loc[result_df["Bond_ID"] == bond_id, "Allocation %"].sum()
+            assert abs(alloc - 50.0) < 0.5, f"{bond_id} alloc was {alloc}"
+        # Resulting duration must hit the target exactly
+        assert abs(metrics["Portfolio Duration"] - 5.0) < 1e-3
+
+    def test_position_cap_prevents_concentration(self):
+        """
+        Single dominant high-yield bond + max_allocation cap of 0.25.
+        No single bond may exceed 25% even if it would maximize yield.
+        """
+        df = pd.DataFrame({
+            "Bond_ID": [f"B{i}" for i in range(5)],
+            "Company": [f"C{i}" for i in range(5)],
+            "Sector": ["Technology"] * 5,
+            "Rating": ["AAA"] * 5,
+            "Duration": [5.0] * 5,
+            "Yield": [0.03, 0.03, 0.03, 0.03, 0.10],  # B4 dominates
+            "Volatility": [0.05] * 5,
+            "Price": [100.0] * 5,
+        })
+        result_df, metrics = brain.run_solver(
+            df, target_duration=5.0, capital=10000,
+            max_allocation=0.25, max_sector_allocation=1.0,
+            objective_type="Maximize Yield",
+        )
+        assert result_df is not None
+        # No single bond should exceed the cap
+        max_alloc_observed = result_df["Allocation %"].max()
+        assert max_alloc_observed <= 25.0 + 0.5  # 0.5pp solver tolerance
+
+    def test_junk_cap_respected_under_max_yield(self):
+        """
+        High-yield junk bond should be capped by max_junk_bond_allocation
+        even when objective prefers yield.
+        """
+        df = pd.DataFrame({
+            "Bond_ID": ["IG1", "IG2", "JUNK"],
+            "Company": ["A", "B", "C"],
+            "Sector": ["Technology", "Financials", "Energy"],
+            "Rating": ["AAA", "AAA", "CCC"],
+            "Duration": [5.0, 5.0, 5.0],
+            "Yield": [0.03, 0.035, 0.15],
+            "Volatility": [0.05, 0.05, 0.25],
+            "Price": [100.0, 100.0, 100.0],
+        })
+        result_df, metrics = brain.run_solver(
+            df, target_duration=5.0, capital=10000,
+            max_allocation=1.0, max_sector_allocation=1.0,
+            max_junk_bond_allocation=0.20,  # 20% junk cap
+            junk_bond_ratings=["BB", "B", "CCC", "D"],
+            objective_type="Maximize Yield",
+        )
+        assert result_df is not None
+        junk_alloc = result_df.loc[result_df["Rating"] == "CCC", "Allocation %"].sum()
+        # Should sit at the cap (20%) since it's the highest-yield
+        assert junk_alloc <= 20.5
+        assert junk_alloc > 19.0  # And the optimizer should actually saturate it

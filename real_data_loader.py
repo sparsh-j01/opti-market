@@ -4,6 +4,7 @@ Loads real corporate bond data from a curated CSV dataset and
 optionally enriches base yields using the FRED API.
 """
 
+import logging
 import pandas as pd
 import numpy as np
 import os
@@ -14,6 +15,8 @@ try:
     HAS_REQUESTS = True
 except ImportError:
     HAS_REQUESTS = False
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # FRED API Integration (free, key optional for low-volume)
@@ -76,7 +79,7 @@ def fetch_fred_rates(api_key: str = None) -> dict:
                             rates[maturity] = float(obs["value"]) / 100.0
                             break
         except Exception as e:
-            print(f"FRED API error: {e}. Using fallback rates.")
+            logger.warning("FRED API error (%s); using fallback rates", e)
     
     # Fallback rates (approximate current market levels)
     if not rates:
@@ -122,7 +125,7 @@ def fetch_fred_spreads(api_key: str = None) -> dict:
                             spreads[rating] = float(obs["value"]) / 100.0
                             break
         except Exception as e:
-            print(f"FRED spreads error: {e}. Using fallback spreads.")
+            logger.warning("FRED spreads error (%s); using fallback spreads", e)
     
     if not spreads:
         spreads = {
@@ -172,7 +175,7 @@ def load_real_bonds(fred_api_key: str = None) -> pd.DataFrame:
         )
     
     df = pd.read_csv(csv_path)
-    
+
     # Map columns to match the synthetic bond format
     rating_vol_map = {
         "AAA": 0.04, "AA+": 0.05, "AA": 0.055, "AA-": 0.06,
@@ -180,15 +183,18 @@ def load_real_bonds(fred_api_key: str = None) -> pd.DataFrame:
         "BBB+": 0.10, "BBB": 0.11, "BBB-": 0.13,
         "BB": 0.16, "B": 0.22, "CCC": 0.28,
     }
-    
-    # Calculate volatility based on rating and duration
+
+    # Calculate volatility based on rating and duration. Seeded so that
+    # successive cold starts produce the same dataset.
+    rng = np.random.default_rng(42)
     df["Volatility"] = df.apply(
         lambda row: round(
-            rating_vol_map.get(row["Rating"], 0.10) + 
-            (row["Duration"] / 30.0) * 0.03 + 
-            np.random.uniform(-0.005, 0.005),
-            4
-        ), axis=1
+            rating_vol_map.get(row["Rating"], 0.10) +
+            (row["Duration"] / 30.0) * 0.03 +
+            float(rng.uniform(-0.005, 0.005)),
+            4,
+        ),
+        axis=1,
     )
     
     # Rename CUSIP to Bond_ID, Issuer to Company

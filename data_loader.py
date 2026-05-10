@@ -1,3 +1,4 @@
+import logging
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -6,6 +7,8 @@ from scipy.optimize import curve_fit
 from functools import lru_cache
 import time
 import real_data_loader
+
+logger = logging.getLogger(__name__)
 
 def nelson_siegel(t, beta0, beta1, beta2, lambda_):
     """Nelson-Siegel formula for realistic yield curves."""
@@ -51,7 +54,7 @@ def fetch_real_treasury_rates():
             "ns_params": opt_params.tolist()
         }
     except Exception as e:
-        print(f"Using fallback rates due to yfinance error: {e}")
+        logger.warning("yfinance fetch failed (%s); using fallback Treasury rates", e)
         result = {
             "maturities": [0.25, 5.0, 10.0, 30.0],
             "rates": [0.04, 0.042, 0.045, 0.048],

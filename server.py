@@ -1,6 +1,12 @@
-from fastapi import FastAPI, Query
+import os
+
+from fastapi import FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from typing import List, Optional
 import numpy as np
 import data_loader
@@ -9,10 +15,25 @@ import risk_engine
 
 app = FastAPI(title="OptiMarket API", version="2.0.0")
 
-# CORS for Next.js frontend
+# Rate limiting — per-IP. Heavy compute endpoints get tighter caps.
+# Public demo: protect free Render tier from abuse without blocking real users.
+limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# CORS — read allowed origins from env. Defaults to local dev.
+# In production, set ALLOWED_ORIGINS to a comma-separated list, e.g.
+#   ALLOWED_ORIGINS="https://opti-market.vercel.app,https://www.your-domain.com"
+_default_origins = "http://localhost:3000,http://127.0.0.1:3000"
+allowed_origins = [
+    o.strip()
+    for o in os.getenv("ALLOWED_ORIGINS", _default_origins).split(",")
+    if o.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -101,7 +122,8 @@ def _run_optimization(req_dict: dict, market_df):
 # --- Endpoints ---
 
 @app.get("/api/yield-curve")
-def get_yield_curve():
+@limiter.limit("30/minute")
+def get_yield_curve(request: Request):
     """Returns Nelson-Siegel parameters and the fitted yield curve data."""
     rates_data = data_loader.fetch_real_treasury_rates()
     beta0, beta1, beta2, lambda_ = rates_data["ns_params"]
@@ -128,7 +150,8 @@ def get_yield_curve():
     }
 
 @app.get("/api/bonds")
-def get_bonds(source: str = Query("real", description="Data source: 'real' or 'synthetic'")):
+@limiter.limit("60/minute")
+def get_bonds(request: Request, source: str = Query("real", description="Data source: 'real' or 'synthetic'")):
     """Returns bond market data from selected source."""
     market_df = _get_market_df(source)
     bonds = market_df.to_dict(orient='records')
@@ -145,7 +168,8 @@ def get_bonds(source: str = Query("real", description="Data source: 'real' or 's
     }
 
 @app.post("/api/optimize")
-def optimize(req: OptimizeRequest):
+@limiter.limit("20/minute")
+def optimize(request: Request, req: OptimizeRequest):
     """Runs the portfolio optimization solver."""
     market_df = _get_market_df(req.data_source)
     
@@ -187,7 +211,8 @@ def optimize(req: OptimizeRequest):
         }
 
 @app.post("/api/efficient-frontier")
-def efficient_frontier(req: FrontierRequest):
+@limiter.limit("10/minute")
+def efficient_frontier(request: Request, req: FrontierRequest):
     """Generates the efficient frontier by sweeping duration targets."""
     market_df = _get_market_df(req.data_source)
     
@@ -205,7 +230,8 @@ def efficient_frontier(req: FrontierRequest):
 
 
 @app.post("/api/monte-carlo")
-def monte_carlo(req: MonteCarloRequest):
+@limiter.limit("10/minute")
+def monte_carlo(request: Request, req: MonteCarloRequest):
     """
     Runs Monte Carlo simulation on the optimized portfolio.
     Returns VaR, CVaR, and P&L distribution histogram.
@@ -235,7 +261,8 @@ def monte_carlo(req: MonteCarloRequest):
 
 
 @app.post("/api/stress-test")
-def stress_test(req: StressTestRequest):
+@limiter.limit("20/minute")
+def stress_test(request: Request, req: StressTestRequest):
     """
     Runs stress test scenarios on the optimized portfolio.
     Returns P&L impact under each scenario.
@@ -261,7 +288,8 @@ def stress_test(req: StressTestRequest):
 
 
 @app.post("/api/backtest")
-def backtest(req: BacktestRequest):
+@limiter.limit("10/minute")
+def backtest(request: Request, req: BacktestRequest):
     """
     Runs backtesting simulation comparing optimized portfolio
     against equal-weight and risk-free benchmarks.
@@ -288,7 +316,8 @@ def backtest(req: BacktestRequest):
 
 
 @app.get("/api/stress-scenarios")
-def get_stress_scenarios():
+@limiter.limit("60/minute")
+def get_stress_scenarios(request: Request):
     """Returns available stress test scenario definitions."""
     return {"scenarios": risk_engine.STRESS_SCENARIOS}
 
