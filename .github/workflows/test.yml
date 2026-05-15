@@ -49,5 +49,5 @@ jobs:
 
       - name: Build
         env:
-          NEXT_PUBLIC_API_URL: https://example.invalid
+          NEXT_PUBLIC_API_BASE_URL: https://example.invalid
         run: npm run build
