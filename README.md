@@ -159,7 +159,20 @@ CVaR_α = -E[PnL | PnL ≤ -VaR]  # Conditional VaR (Expected Shortfall)
 
 ### 5. Stress Testing
 
-Duration-based price sensitivity: `ΔP/P ≈ -D × Δy` applied under 7 macro scenarios with credit spread multipliers.
+Per-bond modified duration approximation aggregated across the portfolio:
+
+```
+ΔP_portfolio / P_portfolio = Σᵢ wᵢ · (-Dᵢ · Δyᵢ)
+```
+
+Applied under 7 macro scenarios (rate shocks, credit crisis, flight-to-quality,
+stagflation, 2008 replay) with credit spread multipliers that hit IG and HY
+bonds asymmetrically.
+
+> **Math audit note.** The codebase was line-audited against textbook
+> formulas; see [MATH.md §9](MATH.md#9-math-audit-log) for the issues that
+> were found and corrected (backtest volatility scaling, stress-test
+> aggregation, risk-free rate consistency).
 
 ## Getting Started
 

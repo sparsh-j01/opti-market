@@ -208,6 +208,7 @@ def run_stress_test(
     weights: np.ndarray,
     capital: float,
     scenarios: List[str] = None,
+    risk_free_rate: float = 0.04,
 ) -> dict:
     """
     Runs stress test scenarios on the portfolio.
@@ -234,7 +235,7 @@ def run_stress_test(
     base_vol = float(np.sqrt(weights.T @ cov_matrix @ weights))
     
     if base_vol > 0:
-        base_sharpe = (base_yield - 0.04) / base_vol  # Assume 4% Rf
+        base_sharpe = (base_yield - risk_free_rate) / base_vol
     else:
         base_sharpe = 0.0
     
@@ -266,12 +267,14 @@ def run_stress_test(
             
             stressed_yields[i] = max(stressed_yields[i] + yield_shift + spread_change, 0.001)
         
-        # Price impact using duration approximation: ΔP/P ≈ -D × Δy
+        # Per-bond price impact using modified duration: ΔP_i/P_i ≈ -D_i × Δy_i
+        # Portfolio impact = Σ w_i · (ΔP_i / P_i). Using -D_portfolio × Δy_weighted
+        # would be exact only if D_i and Δy_i are uncorrelated across bonds —
+        # which fails for non-parallel shifts (e.g., flight-to-quality).
+        durations = portfolio_df['Duration'].values
         yield_changes = stressed_yields - portfolio_df['Yield'].values
         weighted_yield_change = float(np.sum(weights * yield_changes))
-        
-        # Price change (duration-based)
-        price_impact_pct = -base_duration * weighted_yield_change
+        price_impact_pct = float(np.sum(weights * (-durations * yield_changes)))
         pnl_dollar = capital * price_impact_pct
         
         # Stressed volatility
@@ -280,7 +283,7 @@ def run_stress_test(
         
         stressed_yield = float(np.sum(weights * stressed_yields))
         if stressed_vol > 0:
-            stressed_sharpe = (stressed_yield - 0.04) / stressed_vol
+            stressed_sharpe = (stressed_yield - risk_free_rate) / stressed_vol
         else:
             stressed_sharpe = 0.0
         
@@ -321,6 +324,7 @@ def run_backtest(
     capital: float,
     n_periods: int = 12,
     period_type: str = "monthly",
+    risk_free_rate: float = 0.04,
 ) -> dict:
     """
     Simulates historical portfolio performance using a random walk
@@ -365,9 +369,6 @@ def run_backtest(
     eq_return = float(np.sum(eq_weights * expected_returns))
     eq_vol = float(np.sqrt(eq_weights.T @ cov_matrix @ eq_weights))
     
-    # Risk-free rate
-    risk_free_rate = 0.04  # Current ~4% Treasury rate
-    
     # Simulate paths with correlated shocks
     try:
         L = np.linalg.cholesky(cov_matrix + np.eye(n_assets) * 1e-8)
@@ -389,19 +390,18 @@ def run_backtest(
     period_returns_opt = []
     period_returns_eq = []
     
+    sqrt_dt = np.sqrt(dt)
     for t in range(n_periods):
-        # Period returns for each asset
+        # Period returns for each asset. correlated_shocks[t] already has
+        # covariance = Cov (annualized), so the weighted sum is a portfolio-level
+        # shock with std = port_vol. Scaling by sqrt(dt) gives the period shock.
         asset_shocks = correlated_shocks[t]
-        
-        # Optimized portfolio return this period
-        opt_period_return = (port_return * dt + 
-                            port_vol * np.sqrt(dt) * float(np.sum(weights * asset_shocks)))
+
+        opt_period_return = port_return * dt + sqrt_dt * float(np.sum(weights * asset_shocks))
         opt_values.append(opt_values[-1] * (1 + opt_period_return))
         period_returns_opt.append(opt_period_return)
-        
-        # Equal-weight portfolio return this period
-        eq_period_return = (eq_return * dt + 
-                          eq_vol * np.sqrt(dt) * float(np.sum(eq_weights * asset_shocks)))
+
+        eq_period_return = eq_return * dt + sqrt_dt * float(np.sum(eq_weights * asset_shocks))
         eq_values.append(eq_values[-1] * (1 + eq_period_return))
         period_returns_eq.append(eq_period_return)
         

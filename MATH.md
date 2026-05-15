@@ -242,22 +242,31 @@ Where `spread_new = spread_base × spread_multiplier` (with separate
 multipliers for IG vs HY in the flight-to-quality scenario).
 
 ### The price impact
-Using the **modified duration approximation**:
+Using the **modified duration approximation** at the bond level:
 
 ```
-ΔP / P ≈ -D · Δy
+ΔPᵢ / Pᵢ ≈ -Dᵢ · Δyᵢ
 ```
 
-Portfolio-level:
+Portfolio-level — aggregate the per-bond impacts weighted by allocation:
 
 ```
-PnL = capital · (-D_portfolio · Δy_weighted)
+ΔP_portfolio / P_portfolio = Σᵢ wᵢ · (-Dᵢ · Δyᵢ)
+
+PnL = capital · ΔP_portfolio / P_portfolio
 ```
 
-This is a first-order Taylor approximation — accurate for small `Δy`,
-underestimates losses for large moves (because it ignores convexity).
-Acceptable for relative scenario comparison, which is what stress tests
-are for.
+**Why per-bond, not portfolio-average?** The simpler form
+`-D_portfolio · Δy_weighted` equals `(Σ wᵢDᵢ)(Σ wᵢΔyᵢ)`, which only
+matches `Σ wᵢDᵢΔyᵢ` when durations and yield shifts are uncorrelated
+across bonds. They're *not* in scenarios like flight-to-quality (HY
+bonds get bigger Δy *and* often have different durations than IG).
+Per-bond aggregation is exact under any parallel or non-parallel shift.
+
+This is still a first-order Taylor approximation — accurate for small
+`Δy`, underestimates losses for large moves (because it ignores
+convexity, `+0.5·C·Δy²`). Acceptable for relative scenario comparison,
+which is what stress tests are for.
 
 ### The 7 scenarios
 | Scenario | Shift | Spread × | Vol × |
@@ -285,15 +294,34 @@ the same Cholesky decomposition as Monte Carlo. Apply identical shocks to
 three portfolios:
 
 1. **Optimized** — uses the SLSQP weights.
-2. **Equal-weight** — `w_i = 1/N` (naive benchmark).
+2. **Equal-weight** — `wᵢ = 1/N` (naive benchmark).
 3. **Risk-free** — earns `R_f` deterministically each period.
 
+### Period return formula
+For each period `t` and asset shocks `R_t = Z_t · Lᵀ` (covariance = Σ):
+
+```
+r_opt(t) = μ_opt · dt + √dt · (R_t · w_opt)
+r_eq(t)  = μ_eq  · dt + √dt · (R_t · w_eq)
+V(t+1)   = V(t) · (1 + r(t))
+```
+
+Note: `R_t · w` is *already* a portfolio-level shock with std `σ_p`
+(because `Var(Rw) = wᵀΣw`). Scaling by `√dt` gives the correct per-period
+std `σ_p · √dt`. **Do not** multiply by `σ_p` again — that would
+double-scale the volatility (this was a real bug caught and fixed during
+the math audit; see `risk_engine.py:run_backtest`).
+
+The optimized and equal-weight portfolios share the same shock matrix `R`
+each period — this is critical so the alpha comparison reflects *weight
+choice*, not different luck.
+
 ### Reproducibility
-Seeded with `np.random.seed(42)` so the same backtest run is reproducible
-for demos and tests. **This is intentional and clearly documented in
-code** — a real institutional backtest would use historical data, not
-simulated paths. The synthetic backtest demonstrates the *engine*, not
-*alpha*.
+Seeded with a **local** `np.random.default_rng(42)` so the same backtest run
+is reproducible for demos and tests. The local RNG avoids polluting NumPy's
+global random state — important because Monte Carlo *intentionally* uses
+fresh draws each call (so VaR estimates aren't artificially deterministic
+when a backtest happens to run first).
 
 ### Metrics computed per portfolio
 - **Total return** — final value / capital - 1
@@ -327,6 +355,24 @@ here:
 
 These are clear next steps if you wanted to take this from "working
 prototype" to "would survive a CFA exam committee."
+
+---
+
+## 9. Math audit log
+
+This codebase was line-audited against textbook formulas. Issues found
+and corrected (kept here as a transparency record):
+
+| Issue | Where | Fix |
+|---|---|---|
+| Backtest double-scaled volatility — multiplied period shock by `σ_p` even though the shock already had std `σ_p`. Effective per-period std became `σ_p² · √dt`. | `risk_engine.py:run_backtest` | Drop the `σ_p` multiplier; use `√dt · (R_t · w)` directly. |
+| Stress test used `-D_portfolio · Δy_weighted` (only exact under uniform durations). | `risk_engine.py:run_stress_test` | Use `Σᵢ wᵢ · (-Dᵢ · Δyᵢ)`. |
+| Risk-free rate hardcoded to `0.04` in stress and backtest while the optimizer used user-supplied `R_f`. | `risk_engine.py` + `server.py` | Thread `risk_free_rate` through both endpoints. |
+| Backtest seeded the *global* NumPy RNG, leaking determinism into Monte Carlo if both endpoints were called in the same process. | `risk_engine.py:run_backtest` | Use a local `np.random.default_rng(42)`. |
+| Request parameters had no upper bounds (`n_simulations`, `n_periods`, `capital`, etc.). | `server.py` | Pydantic `Field(ge=…, le=…)` on every field. |
+
+All fixes are covered by the existing 47-test pytest suite (see
+`tests/`).
 
 ---
 

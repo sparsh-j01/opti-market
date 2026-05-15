@@ -296,6 +296,7 @@ def stress_test(request: Request, req: StressTestRequest):
         weights=weights,
         capital=req.capital,
         scenarios=req.scenarios,
+        risk_free_rate=req.risk_free_rate,
     )
     
     return {"success": True, **stress_results}
@@ -324,6 +325,7 @@ def backtest(request: Request, req: BacktestRequest):
         capital=req.capital,
         n_periods=req.n_periods,
         period_type=req.period_type,
+        risk_free_rate=req.risk_free_rate,
     )
     
     return {"success": True, **bt_results}
