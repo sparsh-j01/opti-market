@@ -5,7 +5,11 @@ import numpy as np
 import random
 from scipy.optimize import curve_fit
 from functools import lru_cache
+import json
+import os
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 import real_data_loader
 
 logger = logging.getLogger(__name__)
@@ -17,53 +21,126 @@ def nelson_siegel(t, beta0, beta1, beta2, lambda_):
     term2 = term1 - np.exp(-lambda_ * t)
     return beta0 + beta1 * term1 + beta2 * term2
 
-# Simple time-based cache (15 min TTL)
-_treasury_cache = {"data": None, "timestamp": 0}
+# --- Treasury yield curve: non-blocking, disk-persisted, 15-min TTL ---
+#
+# The live yfinance call used to run on the request path. On Render's free
+# tier (single shared CPU, in-memory caches wiped on every spin-down) that
+# blocked the worker for tens of seconds — sometimes minutes — on the first
+# request after idle. Now we:
+#   1. Persist the last good snapshot to disk and load it at import, so the
+#      very first request always answers instantly from cached data (#1).
+#   2. Refresh in a background thread with a hard timeout, so a slow/blocked
+#      Yahoo Finance endpoint can never stall a request (#2).
+
+_SNAPSHOT_PATH = os.path.join(os.path.dirname(__file__), "data", "treasury_snapshot.json")
+_TREASURY_TTL = 900       # serve cached data for 15 min before refreshing
+_YF_TIMEOUT = 4.0         # hard cap on the live yfinance fetch (seconds)
+
+_FALLBACK_TREASURY = {
+    "maturities": [0.25, 5.0, 10.0, 30.0],
+    "rates": [0.04, 0.042, 0.045, 0.048],
+    "ns_params": [0.05, -0.01, 0.01, 0.5],
+}
+
+
+def _load_treasury_snapshot():
+    """Seeds the in-memory cache from disk at import; falls back to constants."""
+    try:
+        with open(_SNAPSHOT_PATH) as f:
+            snap = json.load(f)
+        data = {k: snap[k] for k in ("maturities", "rates", "ns_params")}
+        return {"data": data, "timestamp": float(snap.get("timestamp", 0))}
+    except Exception:
+        return {"data": dict(_FALLBACK_TREASURY), "timestamp": 0.0}
+
+
+_treasury_cache = _load_treasury_snapshot()
+_treasury_lock = threading.Lock()
+_treasury_refreshing = False
+_yf_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="yf-treasury")
+
+
+def _fit_treasury_from_yf():
+    """Blocking: live yfinance fetch + Nelson-Siegel fit. Run under a timeout."""
+    tickers = ["^IRX", "^FVX", "^TNX", "^TYX"]
+    data = yf.download(tickers, period="1d")['Close'].iloc[-1]
+
+    maturities = np.array([0.25, 5.0, 10.0, 30.0])
+    rates = np.array([
+        float(data.get('^IRX', 4.0)) / 100.0,
+        float(data.get('^FVX', 4.0)) / 100.0,
+        float(data.get('^TNX', 4.2)) / 100.0,
+        float(data.get('^TYX', 4.5)) / 100.0,
+    ])
+
+    guess = [0.05, -0.01, 0.01, 0.5]
+    bounds = ([0.0, -0.2, -0.2, 0.01], [0.2, 0.2, 0.2, 5.0])
+    opt_params, _ = curve_fit(nelson_siegel, maturities, rates, p0=guess, bounds=bounds)
+
+    return {
+        "maturities": maturities.tolist(),
+        "rates": rates.tolist(),
+        "ns_params": opt_params.tolist(),
+    }
+
+
+def _refresh_treasury_rates():
+    """Background-only refresh. Never raises into the request path."""
+    global _treasury_cache, _treasury_refreshing
+    try:
+        result = _yf_executor.submit(_fit_treasury_from_yf).result(timeout=_YF_TIMEOUT)
+        now = time.time()
+        _treasury_cache = {"data": result, "timestamp": now}
+        try:
+            os.makedirs(os.path.dirname(_SNAPSHOT_PATH), exist_ok=True)
+            # Atomic write: a Render spin-down mid-write must not truncate
+            # the good snapshot that #1 relies on surviving.
+            tmp_path = f"{_SNAPSHOT_PATH}.{os.getpid()}.tmp"
+            with open(tmp_path, "w") as f:
+                json.dump({**result, "timestamp": now}, f, indent=2)
+            os.replace(tmp_path, _SNAPSHOT_PATH)
+        except Exception as e:
+            logger.warning("Could not persist treasury snapshot (%s)", e)
+    except FuturesTimeoutError:
+        logger.warning(
+            "yfinance fetch exceeded %ss; serving cached/fallback rates", _YF_TIMEOUT
+        )
+    except Exception as e:
+        logger.warning("yfinance fetch failed (%s); serving cached/fallback rates", e)
+    finally:
+        with _treasury_lock:
+            _treasury_refreshing = False
+
 
 def fetch_real_treasury_rates():
     """
-    Fetches LIVE Treasury yields and fits the Nelson-Siegel parametric curve.
-    Cached for 15 minutes.
-    """
-    global _treasury_cache
-    now = time.time()
-    if _treasury_cache["data"] is not None and (now - _treasury_cache["timestamp"]) < 900:
-        return _treasury_cache["data"]
-    
-    tickers = ["^IRX", "^FVX", "^TNX", "^TYX"]
+    Returns Treasury yields and fitted Nelson-Siegel parameters.
 
-    try:
-        data = yf.download(tickers, period="1d")['Close'].iloc[-1]
-        
-        maturities = np.array([0.25, 5.0, 10.0, 30.0])
-        rates = np.array([
-            float(data.get('^IRX', 4.0)) / 100.0,
-            float(data.get('^FVX', 4.0)) / 100.0,
-            float(data.get('^TNX', 4.2)) / 100.0,
-            float(data.get('^TYX', 4.5)) / 100.0
-        ])
-        
-        guess = [0.05, -0.01, 0.01, 0.5]
-        bounds = ([0.0, -0.2, -0.2, 0.01], [0.2, 0.2, 0.2, 5.0])
-        
-        opt_params, _ = curve_fit(nelson_siegel, maturities, rates, p0=guess, bounds=bounds)
-        
-        result = {
-            "maturities": maturities.tolist(),
-            "rates": rates.tolist(),
-            "ns_params": opt_params.tolist()
-        }
-    except Exception as e:
-        logger.warning("yfinance fetch failed (%s); using fallback Treasury rates", e)
-        result = {
-            "maturities": [0.25, 5.0, 10.0, 30.0],
-            "rates": [0.04, 0.042, 0.045, 0.048],
-            "ns_params": [0.05, -0.01, 0.01, 0.5]
-        }
-    
-    _treasury_cache["data"] = result
-    _treasury_cache["timestamp"] = now
-    return result
+    Never blocks on the network: answers immediately from the in-memory
+    cache (seeded from disk at import) and triggers a single background
+    refresh when the data is older than the TTL.
+    """
+    global _treasury_refreshing
+    cache = _treasury_cache
+    is_stale = (time.time() - cache["timestamp"]) >= _TREASURY_TTL
+
+    if is_stale:
+        with _treasury_lock:
+            if not _treasury_refreshing:
+                _treasury_refreshing = True
+                try:
+                    threading.Thread(
+                        target=_refresh_treasury_rates, daemon=True
+                    ).start()
+                except Exception as e:
+                    # If the thread never starts, the flag must not stay
+                    # True forever or we'd never refresh again this process.
+                    _treasury_refreshing = False
+                    logger.warning(
+                        "Could not start treasury refresh thread (%s)", e
+                    )
+
+    return cache["data"]
 
 # Simple time-based cache for bond market (1 hour TTL)
 _bond_market_cache = {"data": None, "timestamp": 0}

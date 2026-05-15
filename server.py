@@ -1,4 +1,6 @@
 import os
+import threading
+import time
 
 from fastapi import FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -119,9 +121,52 @@ def _get_market_df(data_source: str = "real"):
     """Gets bond market data from specified source."""
     return data_loader.generate_bond_market(data_source=data_source)
 
-def _run_optimization(req_dict: dict, market_df):
-    """Shared optimization logic for multiple endpoints."""
-    return brain.run_solver(
+
+# A single Optimize click in the UI fires /optimize plus /monte-carlo,
+# /stress-test and /backtest in parallel — and every one of those re-runs
+# the *identical* SLSQP solve. On Render's 0.1-CPU free tier that solve is
+# the dominant cost, so we memoize it: the 4 redundant solves per click
+# collapse to one. Keyed by every solver-affecting parameter, short TTL so
+# results stay fresh while still covering one burst of requests (#3).
+_SOLVE_TTL = 90
+_solve_cache: dict = {}
+_solve_lock = threading.Lock()
+
+
+def _solve_key(req_dict: dict) -> tuple:
+    return (
+        round(float(req_dict["target_duration"]), 6),
+        round(float(req_dict["capital"]), 6),
+        round(float(req_dict["max_allocation"]), 6),
+        req_dict.get("objective_type", "Optimize Sharpe Ratio"),
+        round(float(req_dict["risk_free_rate"]), 6),
+        round(float(req_dict["max_junk_bond_allocation"]), 6),
+        round(float(req_dict["max_sector_allocation"]), 6),
+        tuple(sorted(req_dict["junk_bond_ratings"])),
+        req_dict.get("data_source", "real"),
+    )
+
+
+def _run_optimization(req_dict: dict, market_df=None):
+    """
+    Shared, memoized optimization. Returns (results_df, metrics).
+
+    The DataFrame is copied per caller so downstream consumers can mutate
+    their copy without corrupting the cached result.
+    """
+    key = _solve_key(req_dict)
+    now = time.time()
+
+    with _solve_lock:
+        hit = _solve_cache.get(key)
+        if hit is not None and (now - hit["timestamp"]) < _SOLVE_TTL:
+            results_df, metrics = hit["value"]
+            return (results_df.copy() if results_df is not None else None), metrics
+
+    if market_df is None:
+        market_df = _get_market_df(req_dict.get("data_source", "real"))
+
+    results_df, metrics = brain.run_solver(
         bonds_df=market_df.copy(),
         target_duration=req_dict["target_duration"],
         capital=req_dict["capital"],
@@ -132,6 +177,17 @@ def _run_optimization(req_dict: dict, market_df):
         max_sector_allocation=req_dict["max_sector_allocation"],
         junk_bond_ratings=req_dict["junk_bond_ratings"],
     )
+
+    with _solve_lock:
+        _solve_cache[key] = {"value": (results_df, metrics), "timestamp": now}
+        # Bound memory: drop entries older than the TTL.
+        for k in [
+            k for k, v in _solve_cache.items()
+            if (now - v["timestamp"]) >= _SOLVE_TTL
+        ]:
+            _solve_cache.pop(k, None)
+
+    return (results_df.copy() if results_df is not None else None), metrics
 
 # --- Endpoints ---
 
@@ -185,20 +241,8 @@ def get_bonds(request: Request, source: str = Query("real", description="Data so
 @limiter.limit("20/minute")
 def optimize(request: Request, req: OptimizeRequest):
     """Runs the portfolio optimization solver."""
-    market_df = _get_market_df(req.data_source)
-    
-    results_df, metrics = brain.run_solver(
-        bonds_df=market_df.copy(),
-        target_duration=req.target_duration,
-        capital=req.capital,
-        max_allocation=req.max_allocation,
-        objective_type=req.objective_type,
-        risk_free_rate=req.risk_free_rate,
-        max_junk_bond_allocation=req.max_junk_bond_allocation,
-        max_sector_allocation=req.max_sector_allocation,
-        junk_bond_ratings=req.junk_bond_ratings
-    )
-    
+    results_df, metrics = _run_optimization(req.model_dump())
+
     if results_df is not None:
         portfolio = results_df[['Bond_ID', 'Company', 'Sector', 'Rating', 'Yield', 'Duration', 'Volatility', 'Allocation %', 'Investment ($)']].to_dict(orient='records')
         
