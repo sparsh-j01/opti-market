@@ -3,10 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "vendor-pyodide": "node scripts/vendor-pyodide.mjs",
+    "predev": "node scripts/vendor-pyodide.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/vendor-pyodide.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
@@ -17,12 +21,14 @@
     "recharts": "^3.7.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.49.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "pyodide": "0.27.7",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

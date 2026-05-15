@@ -14,6 +14,7 @@ import {
     MonteCarloResult, StressTestResult, BacktestResult,
 } from "@/lib/api";
 import { MonteCarloPanel, StressTestPanel, BacktestPanel } from "@/components/AnalyticsPanels";
+import EngineBootOverlay from "@/components/EngineBootOverlay";
 
 const COLORS = [
     "#6c5ce7", "#a29bfe", "#fd79a8", "#fdcb6e", "#00b894",
@@ -58,6 +59,14 @@ export default function DashboardPage() {
     const [maxSector, setMaxSector] = useState(25);
     const [junkRatings, setJunkRatings] = useState(["BB", "B", "CCC", "D"]);
     const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+    const [dataAsOf, setDataAsOf] = useState<string | null>(null);
+
+    useEffect(() => {
+        fetch("/data/data_meta.json")
+            .then((r) => (r.ok ? r.json() : null))
+            .then((m) => m && setDataAsOf(m.data_as_of))
+            .catch(() => {});
+    }, []);
 
     useEffect(() => {
         async function load() {
@@ -127,6 +136,7 @@ export default function DashboardPage() {
     if (loading) {
         return (
             <div className="h-[calc(100vh-5rem)] flex items-center justify-center" style={{ background: "var(--bg-primary)" }}>
+                <EngineBootOverlay />
                 <div className="text-center">
                     <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                         className="w-12 h-12 rounded-full mx-auto mb-4"
@@ -139,6 +149,7 @@ export default function DashboardPage() {
 
     return (
         <div className="md:fixed md:inset-0 flex flex-col md:flex-row md:overflow-hidden min-h-[calc(100vh-5rem)]" style={{ background: "var(--bg-primary)" }}>
+            <EngineBootOverlay />
             {/* Mobile sidebar toggle */}
             <button
                 onClick={() => setMobileSidebarOpen(true)}
@@ -180,6 +191,11 @@ export default function DashboardPage() {
                         <span className="gradient-text">OptiMarket</span>
                     </h2>
                     <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>Bond Portfolio Optimizer</p>
+                    {dataAsOf && (
+                        <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
+                            Data as of {dataAsOf}
+                        </p>
+                    )}
                 </div>
                 <div style={{ borderTop: "1px solid var(--border-color)" }} className="mb-4" />
 

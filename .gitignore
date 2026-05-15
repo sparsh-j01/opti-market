@@ -18,6 +18,18 @@ node_modules/
 .next/
 out/
 
+# Vendored Pyodide runtime — regenerated at build time, never committed
+frontend/public/pyodide/
+frontend/pyodide-*.tar.bz2
+
+# Playwright
+test-results/
+playwright-report/
+
+# NOTE: frontend/public/py and frontend/public/data ARE committed — Vercel's
+# Node build has no Python to regenerate them; the refresh-data Action keeps
+# them in sync. Root copies remain the canonical source of truth.
+
 # IDE
 .vscode/
 .idea/
@@ -44,3 +56,9 @@ ppt_content.md
 
 # Gemini
 .gemini/
+
+# gstack — local session state, security reports, learnings (never commit)
+.gstack/
+
+# Planning docs (local only)
+plan.md

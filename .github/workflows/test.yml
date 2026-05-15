@@ -7,8 +7,18 @@ on:
     branches: [main]
 
 jobs:
+  hygiene:
+    name: Repo hygiene (no attribution)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan tracked files + branch commits
+        run: bash scripts/check_no_attribution.sh
+
   python-tests:
-    name: Backend (pytest)
+    name: Backend (pytest — parity oracle)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,7 +33,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest
+
+      - name: Verify generated assets are in sync
+        run: |
+          python scripts/bake_real_bonds.py
+          python scripts/sync_frontend_assets.py
+          git diff --exit-code data/real_bonds.csv frontend/public/py frontend/public/data \
+            || (echo "::error::Run scripts/bake_real_bonds.py + sync_frontend_assets.py and commit." && exit 1)
 
       - name: Run pytest
         run: pytest tests/ -v
@@ -44,10 +60,14 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
+      - name: Cache vendored Pyodide
+        uses: actions/cache@v4
+        with:
+          path: frontend/public/pyodide
+          key: pyodide-${{ hashFiles('frontend/scripts/vendor-pyodide.mjs') }}
+
       - name: Install dependencies
         run: npm ci
 
       - name: Build
-        env:
-          NEXT_PUBLIC_API_BASE_URL: https://example.invalid
         run: npm run build
