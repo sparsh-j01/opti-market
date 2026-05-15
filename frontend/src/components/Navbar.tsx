@@ -12,27 +12,27 @@ export default function Navbar() {
             initial={{ y: -60, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] glass"
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] glass max-w-[calc(100vw-1rem)]"
             style={{
                 borderRadius: "100px",
                 padding: "0 8px",
                 boxShadow: "0 4px 30px rgba(0, 0, 0, 0.06)",
             }}
         >
-            <div className="flex items-center gap-1 h-14 px-4">
-                <Link href="/" className="flex items-center gap-1 group mr-6">
+            <div className="flex items-center gap-1 h-14 px-2 sm:px-4">
+                <Link href="/" className="flex items-center gap-1 group mr-2 sm:mr-6">
                     <span
-                        className="text-lg font-bold"
+                        className="text-base sm:text-lg font-bold whitespace-nowrap"
                         style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "var(--text-primary)" }}
                     >
                         Opti<span className="gradient-text">Market</span>
                     </span>
                 </Link>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5 sm:gap-1">
                     <Link
                         href="/"
-                        className="px-4 py-2 rounded-full text-sm font-medium transition-all duration-200"
+                        className="px-2.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200"
                         style={{
                             background: pathname === "/" ? "rgba(108, 92, 231, 0.08)" : "transparent",
                             color: pathname === "/" ? "var(--accent-primary)" : "var(--text-secondary)",
@@ -42,7 +42,7 @@ export default function Navbar() {
                     </Link>
                     <Link
                         href="/learn"
-                        className="px-4 py-2 rounded-full text-sm font-medium transition-all duration-200"
+                        className="px-2.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200"
                         style={{
                             background: pathname === "/learn" ? "rgba(108, 92, 231, 0.08)" : "transparent",
                             color: pathname === "/learn" ? "var(--accent-primary)" : "var(--text-secondary)",
@@ -52,7 +52,7 @@ export default function Navbar() {
                     </Link>
                     <Link
                         href="/dashboard"
-                        className="px-4 py-2 rounded-full text-sm font-medium transition-all duration-200"
+                        className="px-2.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200"
                         style={{
                             background: pathname === "/dashboard" ? "rgba(108, 92, 231, 0.08)" : "transparent",
                             color: pathname === "/dashboard" ? "var(--accent-primary)" : "var(--text-secondary)",

@@ -126,43 +126,57 @@ CSV provides 203 real corporate bonds with actual CUSIPs.
 
 ### 1. Nelson-Siegel Yield Curve
 
-```
-y(τ) = β₀ + β₁·(1-e^(-λτ))/(λτ) + β₂·[(1-e^(-λτ))/(λτ) - e^(-λτ)]
+```math
+y(\tau) = \beta_0 + \beta_1 \cdot \frac{1 - e^{-\lambda \tau}}{\lambda \tau} + \beta_2 \cdot \left[ \frac{1 - e^{-\lambda \tau}}{\lambda \tau} - e^{-\lambda \tau} \right]
 ```
 
 Fits a continuous yield function to sparse Treasury data using `scipy.optimize.curve_fit`.
 
 ### 2. Portfolio Risk Model
 
-```
-σ²_p = wᵀ · Σ · w
+```math
+\sigma_p^{2} = w^{\top} \Sigma\, w
 ```
 
-Covariance matrix Σ captures cross-correlations: high within same sector/rating, low across sectors.
+Covariance matrix $\Sigma$ captures cross-correlations: high within same sector/rating, low across sectors.
 
 ### 3. Sharpe Ratio Optimization
 
-```
-maximize  (wᵀμ - Rf) / √(wᵀΣw)
-subject to:  Σwᵢ = 1, wᵀD = D_target, 0 ≤ wᵢ ≤ w_max, Σ(junk) ≤ max_junk, Σ(sector) ≤ max_sec
+```math
+\max_{w} \quad \frac{w^{\top} \mu - R_f}{\sqrt{w^{\top} \Sigma\, w}}
 ```
 
-### 4. Monte Carlo VaR/CVaR
-
+```math
+\begin{aligned}
+\text{subject to} \quad
+& \sum_i w_i = 1 && \text{(fully invested)} \\
+& w^{\top} D = D_{\text{target}} && \text{(duration match)} \\
+& 0 \le w_i \le w_{\max} && \text{(no shorting, position cap)} \\
+& \sum_{i \in \text{junk}} w_i \le \text{junk}_{\max} && \text{(HY exposure cap)} \\
+& \sum_{i \in \text{sector}_k} w_i \le \text{sec}_{\max} && \forall\, k
+\end{aligned}
 ```
-L = cholesky(Σ)         # Decompose covariance matrix
-Z ~ N(0, I)             # Generate random standard normals
-R = Z · Lᵀ              # Correlated returns
-VaR_α = -quantile(PnL, 1-α)    # Value at Risk
-CVaR_α = -E[PnL | PnL ≤ -VaR]  # Conditional VaR (Expected Shortfall)
+
+### 4. Monte Carlo VaR / CVaR
+
+```math
+\Sigma = L\, L^{\top}, \qquad Z \sim \mathcal{N}(0, I), \qquad R = Z\, L^{\top}
+```
+
+```math
+r_{\text{path}} = \left( \mu_p - \tfrac{1}{2}\sigma_p^{2} \right) \cdot dt + (R \cdot w)\sqrt{dt}, \qquad V = V_0 \cdot e^{r_{\text{path}}}
+```
+
+```math
+\text{VaR}_{\alpha} = -\,\mathrm{quantile}\bigl(\mathrm{PnL},\, 1-\alpha\bigr), \qquad \text{CVaR}_{\alpha} = -\,\mathbb{E}\bigl[\mathrm{PnL} \mid \mathrm{PnL} \le -\text{VaR}_{\alpha}\bigr]
 ```
 
 ### 5. Stress Testing
 
-Per-bond modified duration approximation aggregated across the portfolio:
+Per-bond modified-duration approximation aggregated across the portfolio:
 
-```
-ΔP_portfolio / P_portfolio = Σᵢ wᵢ · (-Dᵢ · Δyᵢ)
+```math
+\frac{\Delta P_{\text{port}}}{P_{\text{port}}} = \sum_i w_i \cdot \bigl(-D_i \cdot \Delta y_i\bigr)
 ```
 
 Applied under 7 macro scenarios (rate shocks, credit crisis, flight-to-quality,

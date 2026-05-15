@@ -19,8 +19,8 @@ Nelson & Siegel (1987) showed that real-world yield curves can be
 approximated by three smooth components — a level, a slope, and a curvature
 — controlled by four parameters. The formula:
 
-```
-y(τ) = β₀ + β₁ · (1 - e^(-λτ)) / (λτ) + β₂ · [(1 - e^(-λτ)) / (λτ) - e^(-λτ)]
+```math
+y(\tau) = \beta_0 + \beta_1 \cdot \frac{1 - e^{-\lambda \tau}}{\lambda \tau} + \beta_2 \cdot \left[ \frac{1 - e^{-\lambda \tau}}{\lambda \tau} - e^{-\lambda \tau} \right]
 ```
 
 | Parameter | Meaning |
@@ -70,11 +70,11 @@ Capped at 0.90 (no two bonds are *perfectly* correlated). Diagonal is 1.0.
 
 The covariance is then:
 
-```
-Σ = diag(σ) · C · diag(σ)
+```math
+\Sigma = \operatorname{diag}(\sigma) \cdot C \cdot \operatorname{diag}(\sigma)
 ```
 
-where `C` is the correlation matrix above and `σ` is the per-bond
+where $C$ is the correlation matrix above and $\sigma$ is the per-bond
 volatility vector.
 
 [`data_loader.py:generate_covariance_matrix`](data_loader.py)
@@ -88,13 +88,13 @@ number downstream is wrong.
 
 ## 3. Portfolio Volatility
 
-```
-σ_p = √(wᵀ · Σ · w)
+```math
+\sigma_p = \sqrt{w^{\top} \Sigma\, w}
 ```
 
-`w` is the vector of portfolio weights (must sum to 1), `Σ` is the
+$w$ is the vector of portfolio weights (must sum to 1), $\Sigma$ is the
 covariance matrix from above. Note that this is *not* a weighted average of
-individual volatilities — the cross-terms in `Σ` mean that adding an
+individual volatilities — the cross-terms in $\Sigma$ mean that adding an
 uncorrelated bond can *lower* portfolio volatility even if its own vol is
 high. This is the diversification benefit.
 
@@ -107,8 +107,8 @@ high. This is the diversification benefit.
 ### The objective
 Sharpe ratio is excess return per unit of risk:
 
-```
-Sharpe = (Rₚ - R_f) / σ_p
+```math
+\text{Sharpe} = \frac{R_p - R_f}{\sigma_p}
 ```
 
 We *maximize* it. SciPy's `minimize` only does minimization, so we minimize
@@ -116,15 +116,19 @@ the negative.
 
 ### The constrained program
 
+```math
+\max_w \quad \frac{w^{\top} \mu - R_f}{\sqrt{w^{\top} \Sigma\, w}}
 ```
-maximize    (wᵀμ - R_f) / √(wᵀΣw)
 
-subject to:
-    Σ wᵢ = 1                        (fully invested)
-    wᵀD = D_target                  (duration matching)
-    0 ≤ wᵢ ≤ w_max                  (no shorting, position cap)
-    Σ_{i ∈ junk} wᵢ ≤ junk_cap      (high-yield exposure cap)
-    Σ_{i ∈ sector_k} wᵢ ≤ sec_cap   (per-sector cap, all k)
+```math
+\begin{aligned}
+\text{subject to} \quad
+& \sum_i w_i = 1 && \text{(fully invested)} \\
+& w^{\top} D = D_{\text{target}} && \text{(duration matching)} \\
+& 0 \le w_i \le w_{\max} && \text{(no shorting, position cap)} \\
+& \sum_{i \in \text{junk}} w_i \le \text{junk}_{\text{cap}} && \text{(HY exposure cap)} \\
+& \sum_{i \in \text{sector}_k} w_i \le \text{sec}_{\text{cap}} && \forall\, k
+\end{aligned}
 ```
 
 This is **non-linear** (the objective involves a square root over a
@@ -142,7 +146,7 @@ backend for that branch.
 
 ### Why duration matching matters
 Bond duration measures price sensitivity to interest-rate changes
-(`ΔP/P ≈ -D · Δy`). Locking the portfolio's weighted-average duration to
+($\Delta P / P \approx -D \cdot \Delta y$). Locking the portfolio's weighted-average duration to
 a target is how institutional investors immunize against rate moves at a
 specific horizon (e.g., a pension fund matching a 10-year liability picks
 `D_target = 10`).
@@ -165,29 +169,29 @@ over the next year?" That's a tail-risk question, and you need the *full
 distribution* of P&L outcomes, not just the mean and stddev.
 
 ### The simulation
-1. **Cholesky decomposition.** Find `L` such that `L · Lᵀ = Σ`. Geometrically,
-   `L` is the "square root" of the covariance matrix.
-2. **Generate i.i.d. standard normals.** `Z` is an `N × n_assets` matrix of
-   independent draws from N(0, 1).
-3. **Correlate them.** `R = Z · Lᵀ` — these rows now have the right
-   covariance structure (you can verify: `Cov(R) = Σ`).
-4. **Compute portfolio returns** for each of the N simulated paths:
+1. **Cholesky decomposition.** Find $L$ such that $L \cdot L^{\top} = \Sigma$.
+   Geometrically, $L$ is the "square root" of the covariance matrix.
+2. **Generate i.i.d. standard normals.** $Z$ is an $N \times n_{\text{assets}}$
+   matrix of independent draws from $\mathcal{N}(0, 1)$.
+3. **Correlate them.** $R = Z \cdot L^{\top}$ — these rows now have the right
+   covariance structure (you can verify: $\operatorname{Cov}(R) = \Sigma$).
+4. **Compute portfolio returns** for each of the $N$ simulated paths:
 
-   ```
-   r_path = (μ_p - 0.5·σ_p²)·dt + (R · w)·√dt
+   ```math
+   r_{\text{path}} = \left( \mu_p - \tfrac{1}{2}\,\sigma_p^{2} \right) \cdot dt + (R \cdot w)\,\sqrt{dt}
    ```
 
-   The `-0.5·σ_p²` correction is the **Itô correction** — it appears
-   because we're modeling log-returns under geometric Brownian motion.
-5. **Terminal value:** `V = capital · exp(r_path)`.
+   The $-\tfrac{1}{2}\sigma_p^{2}$ correction is the **Itô correction** — it
+   appears because we're modeling log-returns under geometric Brownian motion.
+5. **Terminal value:** $V = \text{capital} \cdot \exp(r_{\text{path}})$.
 6. **Sort the P&Ls.** Pick quantiles.
 
 ### VaR (Value at Risk)
-At confidence level `α` (e.g., 95%), VaR is the loss that's only exceeded
-`(1-α)` of the time:
+At confidence level $\alpha$ (e.g., 95%), VaR is the loss that's only exceeded
+$(1 - \alpha)$ of the time:
 
-```
-VaR_α = -quantile(PnL, 1-α)
+```math
+\text{VaR}_{\alpha} = -\,\mathrm{quantile}\bigl(\mathrm{PnL},\, 1 - \alpha\bigr)
 ```
 
 "Across 10,000 simulated years, the 5th-percentile worst PnL was -$4,200,
@@ -198,8 +202,8 @@ VaR has a known weakness: it tells you the *threshold*, but not how bad
 things get *beyond* it. CVaR is the *average* loss conditional on being
 worse than VaR:
 
-```
-CVaR_α = -E[PnL | PnL ≤ -VaR_α]
+```math
+\text{CVaR}_{\alpha} = -\,\mathbb{E}\bigl[\mathrm{PnL} \mid \mathrm{PnL} \le -\text{VaR}_{\alpha}\bigr]
 ```
 
 By construction, **CVaR ≥ VaR always** — and that's verified in
@@ -234,39 +238,38 @@ Each scenario specifies three shocks:
 
 For each bond, the stressed yield is:
 
-```
-y_new = y_base + yield_shift + (spread_new - spread_base)
+```math
+y_{\text{new}} = y_{\text{base}} + \text{yield\_shift} + \bigl(\text{spread}_{\text{new}} - \text{spread}_{\text{base}}\bigr)
 ```
 
-Where `spread_new = spread_base × spread_multiplier` (with separate
-multipliers for IG vs HY in the flight-to-quality scenario).
+where $\text{spread}_{\text{new}} = \text{spread}_{\text{base}} \times \text{spread\_multiplier}$
+(with separate multipliers for IG vs HY in the flight-to-quality scenario).
 
 ### The price impact
 Using the **modified duration approximation** at the bond level:
 
-```
-ΔPᵢ / Pᵢ ≈ -Dᵢ · Δyᵢ
+```math
+\frac{\Delta P_i}{P_i} \approx -D_i \cdot \Delta y_i
 ```
 
 Portfolio-level — aggregate the per-bond impacts weighted by allocation:
 
-```
-ΔP_portfolio / P_portfolio = Σᵢ wᵢ · (-Dᵢ · Δyᵢ)
-
-PnL = capital · ΔP_portfolio / P_portfolio
+```math
+\frac{\Delta P_{\text{port}}}{P_{\text{port}}} = \sum_i w_i \cdot \bigl(-D_i \cdot \Delta y_i\bigr), \qquad \text{PnL} = \text{capital} \cdot \frac{\Delta P_{\text{port}}}{P_{\text{port}}}
 ```
 
 **Why per-bond, not portfolio-average?** The simpler form
-`-D_portfolio · Δy_weighted` equals `(Σ wᵢDᵢ)(Σ wᵢΔyᵢ)`, which only
-matches `Σ wᵢDᵢΔyᵢ` when durations and yield shifts are uncorrelated
-across bonds. They're *not* in scenarios like flight-to-quality (HY
-bonds get bigger Δy *and* often have different durations than IG).
+$-D_{\text{port}} \cdot \Delta y_{\text{weighted}}$ equals
+$\bigl(\sum_i w_i D_i\bigr)\bigl(\sum_i w_i \Delta y_i\bigr)$, which only
+matches $\sum_i w_i D_i \Delta y_i$ when durations and yield shifts are
+uncorrelated across bonds. They're *not* in scenarios like flight-to-quality
+(HY bonds get bigger $\Delta y$ *and* often have different durations than IG).
 Per-bond aggregation is exact under any parallel or non-parallel shift.
 
 This is still a first-order Taylor approximation — accurate for small
-`Δy`, underestimates losses for large moves (because it ignores
-convexity, `+0.5·C·Δy²`). Acceptable for relative scenario comparison,
-which is what stress tests are for.
+$\Delta y$, underestimates losses for large moves (because it ignores
+convexity, $+\tfrac{1}{2} C\, \Delta y^{2}$). Acceptable for relative
+scenario comparison, which is what stress tests are for.
 
 ### The 7 scenarios
 | Scenario | Shift | Spread × | Vol × |
@@ -298,19 +301,23 @@ three portfolios:
 3. **Risk-free** — earns `R_f` deterministically each period.
 
 ### Period return formula
-For each period `t` and asset shocks `R_t = Z_t · Lᵀ` (covariance = Σ):
+For each period $t$ and asset shocks $R_t = Z_t \cdot L^{\top}$
+(covariance $= \Sigma$):
 
-```
-r_opt(t) = μ_opt · dt + √dt · (R_t · w_opt)
-r_eq(t)  = μ_eq  · dt + √dt · (R_t · w_eq)
-V(t+1)   = V(t) · (1 + r(t))
+```math
+\begin{aligned}
+r_{\text{opt}}(t) &= \mu_{\text{opt}} \cdot dt + \sqrt{dt}\,(R_t \cdot w_{\text{opt}}) \\
+r_{\text{eq}}(t)  &= \mu_{\text{eq}}  \cdot dt + \sqrt{dt}\,(R_t \cdot w_{\text{eq}}) \\
+V(t{+}1) &= V(t) \cdot \bigl(1 + r(t)\bigr)
+\end{aligned}
 ```
 
-Note: `R_t · w` is *already* a portfolio-level shock with std `σ_p`
-(because `Var(Rw) = wᵀΣw`). Scaling by `√dt` gives the correct per-period
-std `σ_p · √dt`. **Do not** multiply by `σ_p` again — that would
-double-scale the volatility (this was a real bug caught and fixed during
-the math audit; see `risk_engine.py:run_backtest`).
+Note: $R_t \cdot w$ is *already* a portfolio-level shock with std $\sigma_p$
+(because $\operatorname{Var}(R w) = w^{\top} \Sigma\, w$). Scaling by
+$\sqrt{dt}$ gives the correct per-period std $\sigma_p \sqrt{dt}$. **Do not**
+multiply by $\sigma_p$ again — that would double-scale the volatility (this
+was a real bug caught and fixed during the math audit; see
+`risk_engine.py:run_backtest`).
 
 The optimized and equal-weight portfolios share the same shock matrix `R`
 each period — this is critical so the alpha comparison reflects *weight

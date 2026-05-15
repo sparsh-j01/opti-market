@@ -64,7 +64,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-5xl md:text-7xl font-black leading-tight mb-6 tracking-tight"
+            className="text-4xl sm:text-5xl md:text-7xl font-black leading-tight mb-6 tracking-tight"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "var(--text-primary)" }}
           >
             Build the <span className="gradient-text">Perfect</span>
@@ -87,18 +87,18 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.6 }}
-            className="flex items-center justify-center gap-4"
+            className="flex flex-wrap items-center justify-center gap-3 sm:gap-4"
           >
             <Link
               href="/dashboard"
-              className="px-8 py-4 rounded-full text-base font-bold text-white transition-all duration-300 hover:scale-105 animate-pulse-glow"
+              className="px-6 sm:px-8 py-3 sm:py-4 rounded-full text-sm sm:text-base font-bold text-white transition-all duration-300 hover:scale-105 animate-pulse-glow"
               style={{ background: "var(--gradient-main)" }}
             >
               Get Started →
             </Link>
             <a
               href="#features"
-              className="px-8 py-4 rounded-full text-base font-medium transition-all duration-300"
+              className="px-6 sm:px-8 py-3 sm:py-4 rounded-full text-sm sm:text-base font-medium transition-all duration-300"
               style={{ border: "1px solid var(--border-color)", color: "var(--text-secondary)" }}
             >
               How It Works
@@ -110,7 +110,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.8 }}
-            className="flex items-center justify-center gap-12 mt-16"
+            className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center sm:justify-center gap-6 sm:gap-12 mt-12 sm:mt-16 max-w-md sm:max-w-none mx-auto"
           >
             {stats.map((s, i) => (
               <div key={i} className="text-center">

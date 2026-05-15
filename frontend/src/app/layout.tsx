@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 
@@ -6,6 +6,12 @@ export const metadata: Metadata = {
   title: "OptiMarket · Quantitative Bond Portfolio Optimizer",
   description:
     "Optimize your bond portfolio using Nelson-Siegel yield curve modeling and non-linear programming. Maximize yield or Sharpe Ratio under real-world constraints.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({

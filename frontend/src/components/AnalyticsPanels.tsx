@@ -13,7 +13,7 @@ export function MonteCarloPanel({ data }: { data: MonteCarloResult }) {
     return (
         <div className="space-y-4">
             {/* VaR/CVaR KPIs */}
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
                     { label: "95% VaR", value: `$${var95?.VaR_dollar.toLocaleString()}`, sub: `${var95?.VaR_percent}%` },
                     { label: "95% CVaR", value: `$${var95?.CVaR_dollar.toLocaleString()}`, sub: `${var95?.CVaR_percent}%` },
@@ -57,7 +57,7 @@ export function MonteCarloPanel({ data }: { data: MonteCarloResult }) {
 
             {/* Percentiles */}
             {data.percentiles && (
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-9 gap-2">
                     {Object.entries(data.percentiles).map(([k, v]) => (
                         <div key={k} className="rounded-lg p-2 text-center" style={{ background: "var(--bg-primary)", border: "1px solid var(--border-color)" }}>
                             <div className="text-[9px] font-semibold uppercase" style={{ color: "var(--text-muted)" }}>{k.toUpperCase()}</div>
@@ -76,8 +76,8 @@ export function StressTestPanel({ data }: { data: StressTestResult }) {
 
     return (
         <div className="space-y-4">
-            <div className="rounded-2xl overflow-hidden" style={{ background: "var(--bg-primary)", border: "1px solid var(--border-color)" }}>
-                <table className="w-full text-sm">
+            <div className="rounded-2xl overflow-x-auto" style={{ background: "var(--bg-primary)", border: "1px solid var(--border-color)" }}>
+                <table className="w-full text-sm min-w-[640px]">
                     <thead style={{ background: "var(--bg-secondary)" }}>
                         <tr>
                             {["Scenario", "Yield Δ (bp)", "Price Impact", "P&L ($)", "Stressed Vol", "Sharpe"].map(h => (
@@ -141,7 +141,7 @@ export function BacktestPanel({ data }: { data: BacktestResult }) {
     return (
         <div className="space-y-4">
             {/* Summary KPIs */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[
                     { label: "Optimized", returnPct: s.optimized.total_return_pct, final: s.optimized.final_value, mdd: s.optimized.max_drawdown_pct, color: "#6c5ce7" },
                     { label: "Equal Weight", returnPct: s.equal_weight.total_return_pct, final: s.equal_weight.final_value, mdd: s.equal_weight.max_drawdown_pct, color: "#00b894" },
@@ -163,7 +163,7 @@ export function BacktestPanel({ data }: { data: BacktestResult }) {
             </div>
 
             {/* Alpha badge */}
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
                 <div className="rounded-xl px-4 py-2 text-xs font-medium" style={{
                     background: s.alpha_vs_benchmark >= 0 ? "rgba(0,184,148,0.08)" : "rgba(253,121,168,0.08)",
                     border: `1px solid ${s.alpha_vs_benchmark >= 0 ? "rgba(0,184,148,0.2)" : "rgba(253,121,168,0.2)"}`,

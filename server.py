@@ -339,5 +339,6 @@ def get_stress_scenarios(request: Request):
 
 
 @app.get("/api/health")
-def health():
+@limiter.exempt
+def health(request: Request):
     return {"status": "ok", "version": "2.0.0"}

@@ -57,6 +57,7 @@ export default function DashboardPage() {
     const [maxJunk, setMaxJunk] = useState(30);
     const [maxSector, setMaxSector] = useState(25);
     const [junkRatings, setJunkRatings] = useState(["BB", "B", "CCC", "D"]);
+    const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
     useEffect(() => {
         async function load() {
@@ -137,15 +138,43 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="fixed inset-0 flex overflow-hidden" style={{ background: "var(--bg-primary)" }}>
+        <div className="md:fixed md:inset-0 flex flex-col md:flex-row md:overflow-hidden min-h-[calc(100vh-5rem)]" style={{ background: "var(--bg-primary)" }}>
+            {/* Mobile sidebar toggle */}
+            <button
+                onClick={() => setMobileSidebarOpen(true)}
+                className="md:hidden fixed bottom-4 right-4 z-[90] w-14 h-14 rounded-full text-white font-bold shadow-lg flex items-center justify-center"
+                style={{ background: "var(--gradient-main)", boxShadow: "0 8px 24px rgba(108,92,231,0.35)" }}
+                aria-label="Open controls"
+            >
+                ⚙
+            </button>
+
+            {/* Mobile backdrop */}
+            <AnimatePresence>
+                {mobileSidebarOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="md:hidden fixed inset-0 z-[95]"
+                        style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}
+                        onClick={() => setMobileSidebarOpen(false)}
+                    />
+                )}
+            </AnimatePresence>
+
             {/* ===== SIDEBAR ===== */}
-            <motion.aside
-                initial={{ x: -300, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ duration: 0.5 }}
-                className="w-72 h-full overflow-y-auto p-5 flex-shrink-0 flex flex-col"
+            <aside
+                className={`fixed md:relative top-0 left-0 z-[96] md:z-auto w-72 h-full md:h-auto md:flex-shrink-0 overflow-y-auto p-5 flex flex-col pt-20 md:pt-5 transition-transform duration-300 ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
                 style={{ background: "var(--bg-card)", borderRight: "1px solid var(--border-color)" }}
             >
+                {/* Mobile close button */}
+                <button
+                    onClick={() => setMobileSidebarOpen(false)}
+                    className="md:hidden absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center"
+                    style={{ background: "var(--bg-primary)", color: "var(--text-secondary)" }}
+                    aria-label="Close controls"
+                >
+                    ✕
+                </button>
                 <div className="mb-4">
                     <h2 className="text-base font-bold" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                         <span className="gradient-text">OptiMarket</span>
@@ -273,28 +302,28 @@ export default function DashboardPage() {
                         style={{ border: "1px solid var(--border-color)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}>
                         View All Bonds
                     </button>
-                    <button onClick={handleOptimize} disabled={optimizing}
+                    <button onClick={() => { setMobileSidebarOpen(false); handleOptimize(); }} disabled={optimizing}
                         className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{ background: "var(--gradient-main)", boxShadow: "0 4px 20px rgba(108,92,231,0.25)" }}>
                         RUN OPTIMIZER
                     </button>
                 </div>
-            </motion.aside>
+            </aside>
 
             {/* ===== MAIN CONTENT — Yield Curve ===== */}
-            <main className="flex-1 h-full overflow-hidden p-6 pt-16 flex flex-col">
+            <main className="flex-1 md:h-full md:overflow-hidden p-4 sm:p-6 pt-16 md:pt-16 pb-24 md:pb-6 flex flex-col">
                 {/* Header row */}
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
                     <div className="flex items-center gap-2">
                         <div className="w-1 h-5 rounded-full" style={{ background: "var(--accent-primary)" }} />
                         <h2 className="text-sm font-bold" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Live Treasury Yield Curve</h2>
                     </div>
                     {bondsData && (
-                        <div className="flex items-center gap-3 text-xs" style={{ color: "var(--text-muted)" }}>
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs" style={{ color: "var(--text-muted)" }}>
                             <span><strong className="gradient-text">{bondsData.summary.total}</strong> bonds</span>
-                            <span>·</span>
+                            <span className="hidden sm:inline">·</span>
                             <span><strong className="gradient-text">{bondsData.summary.sectors}</strong> sectors</span>
-                            <span>·</span>
+                            <span className="hidden sm:inline">·</span>
                             <span><strong className="gradient-text">{(bondsData.summary.avg_yield * 100).toFixed(1)}%</strong> avg yield</span>
                         </div>
                     )}
@@ -302,7 +331,7 @@ export default function DashboardPage() {
 
                 {/* NS Params */}
                 {yieldData && (
-                    <div className="grid grid-cols-4 gap-2 mb-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
                         <KPICard label="β₀ (Level)" value={yieldData.ns_params.beta0.toFixed(4)} />
                         <KPICard label="β₁ (Slope)" value={yieldData.ns_params.beta1.toFixed(4)} />
                         <KPICard label="β₂ (Curvature)" value={yieldData.ns_params.beta2.toFixed(4)} />
@@ -312,7 +341,7 @@ export default function DashboardPage() {
 
                 {/* Yield Curve Chart */}
                 {yieldData && (
-                    <div className="flex-1 min-h-0 rounded-2xl p-5" style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)" }}>
+                    <div className="flex-1 min-h-[320px] md:min-h-0 rounded-2xl p-3 sm:p-5" style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)" }}>
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e2e8" />
@@ -363,8 +392,8 @@ export default function DashboardPage() {
                                     className="w-9 h-9 rounded-full flex items-center justify-center text-lg transition-all hover:scale-110"
                                     style={{ background: "var(--bg-primary)", color: "var(--text-secondary)" }}>✕</button>
                             </div>
-                            <div className="max-h-[70vh] overflow-y-auto">
-                                <table className="w-full text-sm">
+                            <div className="max-h-[70vh] overflow-auto">
+                                <table className="w-full text-sm min-w-[640px]">
                                     <thead className="sticky top-0" style={{ background: "var(--bg-secondary)" }}>
                                         <tr>
                                             {["Bond ID", "Company", "Sector", "Rating", "Yield", "Duration", "Volatility"].map(h => (
@@ -452,17 +481,17 @@ export default function DashboardPage() {
                                             ✅ Optimization successful — {objective}
                                         </div>
 
-                                        <div className="grid grid-cols-4 gap-4 mb-6">
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
                                             <KPICard label="Portfolio Yield" value={`${(results.metrics["Portfolio Yield"] * 100).toFixed(2)}%`} />
                                             <KPICard label="Duration" value={`${results.metrics["Portfolio Duration"].toFixed(2)} yrs`} />
                                             <KPICard label="Volatility" value={`${(results.metrics["Portfolio Volatility"] * 100).toFixed(2)}%`} />
                                             <KPICard label="Sharpe Ratio" value={results.metrics["Sharpe Ratio"].toFixed(2)} />
                                         </div>
 
-                                        <div className="flex gap-2 mb-6">
+                                        <div className="flex gap-2 mb-6 overflow-x-auto -mx-2 px-2 pb-2 [&::-webkit-scrollbar]:h-1">
                                             {tabs.map((t, i) => (
                                                 <button key={t} onClick={() => setActiveTab(i)}
-                                                    className="px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-200"
+                                                    className="px-4 sm:px-5 py-2.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0"
                                                     style={{
                                                         background: activeTab === i ? "rgba(108,92,231,0.08)" : "transparent",
                                                         border: `1px solid ${activeTab === i ? "rgba(108,92,231,0.25)" : "var(--border-color)"}`,
@@ -472,7 +501,7 @@ export default function DashboardPage() {
                                         </div>
 
                                         {activeTab === 0 && (
-                                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-2 gap-6">
+                                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                                                 <div className="rounded-2xl p-6" style={{ background: "var(--bg-primary)", border: "1px solid var(--border-color)" }}>
                                                     <h3 className="text-sm font-semibold mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>By Rating</h3>
                                                     <ResponsiveContainer width="100%" height={280}>
@@ -510,8 +539,8 @@ export default function DashboardPage() {
 
                                         {activeTab === 1 && (
                                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                                                <div className="rounded-2xl overflow-auto max-h-[400px]" style={{ background: "var(--bg-primary)", border: "1px solid var(--border-color)" }}>
-                                                    <table className="w-full text-sm">
+                                                <div className="rounded-2xl overflow-x-auto max-h-[400px]" style={{ background: "var(--bg-primary)", border: "1px solid var(--border-color)" }}>
+                                                    <table className="w-full text-sm min-w-[720px]">
                                                         <thead className="sticky top-0" style={{ background: "var(--bg-secondary)" }}>
                                                             <tr>
                                                                 {["Bond ID", "Company", "Sector", "Rating", "Yield", "Duration", "Vol.", "Alloc %", "Investment"].map(h => (
