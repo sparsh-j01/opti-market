@@ -126,9 +126,10 @@ def _get_market_df(data_source: str = "real"):
 # /stress-test and /backtest in parallel — and every one of those re-runs
 # the *identical* SLSQP solve. On Render's 0.1-CPU free tier that solve is
 # the dominant cost, so we memoize it: the 4 redundant solves per click
-# collapse to one. Keyed by every solver-affecting parameter, short TTL so
-# results stay fresh while still covering one burst of requests (#3).
-_SOLVE_TTL = 90
+# collapse to one. Keyed by every solver-affecting parameter. TTL is 10 min:
+# long enough that repeat demo clicks stay instant, still far fresher than the
+# underlying inputs (real bond data cached 1h, treasury curve 15m) (#3).
+_SOLVE_TTL = 600
 _solve_cache: dict = {}
 _solve_lock = threading.Lock()
 
@@ -386,3 +387,37 @@ def get_stress_scenarios(request: Request):
 @limiter.exempt
 def health(request: Request):
     return {"status": "ok", "version": "2.0.0"}
+
+
+# --- Cache prewarm ---
+# A single Optimize click produces two distinct solves: /optimize defaults to
+# "Maximize Yield" (fast linprog), while /monte-carlo, /stress-test and
+# /backtest default to "Optimize Sharpe Ratio" (slow SLSQP). Solve both default
+# parameter sets in a background thread at startup so the first demo click is a
+# cache hit instead of a cold SLSQP run on a throttled CPU. Daemon thread keeps
+# startup non-blocking so the platform health probe still passes immediately.
+
+_PREWARM_DEFAULTS = [
+    {"target_duration": 5.0, "capital": 100_000, "max_allocation": 0.2,
+     "objective_type": "Maximize Yield", "risk_free_rate": 0.01,
+     "max_junk_bond_allocation": 0.3, "max_sector_allocation": 0.25,
+     "junk_bond_ratings": ["BB", "B", "CCC", "D"], "data_source": "real"},
+    {"target_duration": 5.0, "capital": 100_000, "max_allocation": 0.2,
+     "objective_type": "Optimize Sharpe Ratio", "risk_free_rate": 0.01,
+     "max_junk_bond_allocation": 0.3, "max_sector_allocation": 0.25,
+     "junk_bond_ratings": ["BB", "B", "CCC", "D"], "data_source": "real"},
+]
+
+
+def _prewarm_solve_cache():
+    for params in _PREWARM_DEFAULTS:
+        try:
+            _run_optimization(params)
+        except Exception:
+            # Best-effort only: a failed prewarm must never crash the worker.
+            pass
+
+
+@app.on_event("startup")
+def _kick_off_prewarm():
+    threading.Thread(target=_prewarm_solve_cache, daemon=True).start()

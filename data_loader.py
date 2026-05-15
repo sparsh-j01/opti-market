@@ -234,27 +234,23 @@ def generate_covariance_matrix(bonds_df):
     vols = bonds_df['Volatility'].values
     sectors = bonds_df['Sector'].values
     ratings = bonds_df['Rating'].values
-    
+
+    # Vectorized correlation build. This used to be an O(n^2) pure-Python
+    # double loop (~5,000 iterations for 100 bonds, called several times per
+    # request) — the dominant cost on a throttled 0.1-CPU host. The numpy
+    # form below is numerically identical: same 0.25 base, +0.3 same-sector,
+    # +0.15 same-IG-status, clamp off-diagonals at 0.90, unit diagonal.
+    ig_ratings = {"AAA", "AA", "A", "BBB"}
+    same_sector = sectors[:, None] == sectors[None, :]
+    is_ig = np.array([r in ig_ratings for r in ratings])
+    same_ig = is_ig[:, None] == is_ig[None, :]
+
     C = np.full((n, n), 0.25)
-    np.fill_diagonal(C, 1.0)
-    
-    ig_ratings = ["AAA", "AA", "A", "BBB"]
-    
-    for i in range(n):
-        for j in range(i+1, n):
-            if sectors[i] == sectors[j]:
-                C[i, j] += 0.3
-                C[j, i] += 0.3
-            
-            is_i_ig = ratings[i] in ig_ratings
-            is_j_ig = ratings[j] in ig_ratings
-            if is_i_ig == is_j_ig:
-                C[i, j] += 0.15
-                C[j, i] += 0.15
-                
-            C[i, j] = min(C[i, j], 0.90)
-            C[j, i] = min(C[j, i], 0.90)
-            
+    C += np.where(same_sector, 0.30, 0.0)
+    C += np.where(same_ig, 0.15, 0.0)
+    np.clip(C, None, 0.90, out=C)   # clamp correlations (off-diagonal) at 0.90
+    np.fill_diagonal(C, 1.0)        # restore unit diagonal after the clamp
+
     diag_vols = np.diag(vols)
     cov_matrix = diag_vols @ C @ diag_vols
     cov_matrix += np.eye(n) * 1e-8
