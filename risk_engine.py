@@ -340,8 +340,10 @@ def run_backtest(
     Returns:
         Dictionary with time series data for chart rendering
     """
-    np.random.seed(42)  # Reproducibility for demo
-    
+    # Local RNG so backtest reproducibility doesn't leak into other endpoints
+    # (Monte Carlo intentionally uses fresh np.random draws each call).
+    rng = np.random.default_rng(42)
+
     n_assets = len(portfolio_df)
     cov_matrix = data_loader.generate_covariance_matrix(portfolio_df)
     expected_returns = portfolio_df['Yield'].values
@@ -373,7 +375,7 @@ def run_backtest(
         L = np.diag(np.sqrt(np.diag(cov_matrix)))
     
     # Generate common random shocks (same market conditions for fair comparison)
-    Z = np.random.standard_normal((n_periods, n_assets))
+    Z = rng.standard_normal((n_periods, n_assets))
     correlated_shocks = Z @ L.T
     
     # Build cumulative return series

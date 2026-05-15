@@ -3,11 +3,11 @@ import os
 from fastapi import FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
-from typing import List, Optional
+from typing import List, Literal, Optional
 import numpy as np
 import data_loader
 import brain
@@ -40,64 +40,78 @@ app.add_middleware(
 )
 
 # --- Request/Response Models ---
+# Bounds protect the public free-tier demo from accidental or malicious payloads
+# that would otherwise allocate gigabytes of memory or take minutes to compute.
+# Pydantic returns HTTP 422 automatically when bounds are violated.
+
+ObjectiveType = Literal["Maximize Yield", "Optimize Sharpe Ratio"]
+DataSource = Literal["real", "synthetic"]
+PeriodType = Literal["monthly", "quarterly"]
+ALLOWED_RATINGS = {"AAA", "AA+", "AA", "AA-", "A+", "A", "A-",
+                   "BBB+", "BBB", "BBB-", "BB", "B", "CCC", "D"}
+
 
 class OptimizeRequest(BaseModel):
-    target_duration: float = 5.0
-    capital: float = 100000
-    max_allocation: float = 0.2
-    objective_type: str = "Maximize Yield"
-    risk_free_rate: float = 0.01
-    max_junk_bond_allocation: float = 0.3
-    max_sector_allocation: float = 0.25
-    junk_bond_ratings: List[str] = ["BB", "B", "CCC", "D"]
-    data_source: str = "real"
+    target_duration: float = Field(5.0, ge=0.25, le=30.0)
+    capital: float = Field(100_000, gt=0, le=1e9)
+    max_allocation: float = Field(0.2, gt=0, le=1.0)
+    objective_type: ObjectiveType = "Maximize Yield"
+    risk_free_rate: float = Field(0.01, ge=0, le=0.5)
+    max_junk_bond_allocation: float = Field(0.3, ge=0, le=1.0)
+    max_sector_allocation: float = Field(0.25, ge=0, le=1.0)
+    junk_bond_ratings: List[str] = Field(default=["BB", "B", "CCC", "D"], max_length=14)
+    data_source: DataSource = "real"
+
 
 class FrontierRequest(BaseModel):
-    capital: float = 100000
-    max_allocation: float = 0.2
-    max_junk_bond_allocation: float = 0.3
-    max_sector_allocation: float = 0.25
-    junk_bond_ratings: List[str] = ["BB", "B", "CCC", "D"]
-    risk_free_rate: float = 0.01
-    data_source: str = "real"
+    capital: float = Field(100_000, gt=0, le=1e9)
+    max_allocation: float = Field(0.2, gt=0, le=1.0)
+    max_junk_bond_allocation: float = Field(0.3, ge=0, le=1.0)
+    max_sector_allocation: float = Field(0.25, ge=0, le=1.0)
+    junk_bond_ratings: List[str] = Field(default=["BB", "B", "CCC", "D"], max_length=14)
+    risk_free_rate: float = Field(0.01, ge=0, le=0.5)
+    data_source: DataSource = "real"
+
 
 class MonteCarloRequest(BaseModel):
-    target_duration: float = 5.0
-    capital: float = 100000
-    max_allocation: float = 0.2
-    objective_type: str = "Optimize Sharpe Ratio"
-    risk_free_rate: float = 0.01
-    max_junk_bond_allocation: float = 0.3
-    max_sector_allocation: float = 0.25
-    junk_bond_ratings: List[str] = ["BB", "B", "CCC", "D"]
-    n_simulations: int = 10000
-    time_horizon_days: int = 252
-    data_source: str = "real"
+    target_duration: float = Field(5.0, ge=0.25, le=30.0)
+    capital: float = Field(100_000, gt=0, le=1e9)
+    max_allocation: float = Field(0.2, gt=0, le=1.0)
+    objective_type: ObjectiveType = "Optimize Sharpe Ratio"
+    risk_free_rate: float = Field(0.01, ge=0, le=0.5)
+    max_junk_bond_allocation: float = Field(0.3, ge=0, le=1.0)
+    max_sector_allocation: float = Field(0.25, ge=0, le=1.0)
+    junk_bond_ratings: List[str] = Field(default=["BB", "B", "CCC", "D"], max_length=14)
+    n_simulations: int = Field(10_000, ge=100, le=50_000)
+    time_horizon_days: int = Field(252, ge=1, le=2_520)
+    data_source: DataSource = "real"
+
 
 class StressTestRequest(BaseModel):
-    target_duration: float = 5.0
-    capital: float = 100000
-    max_allocation: float = 0.2
-    objective_type: str = "Optimize Sharpe Ratio"
-    risk_free_rate: float = 0.01
-    max_junk_bond_allocation: float = 0.3
-    max_sector_allocation: float = 0.25
-    junk_bond_ratings: List[str] = ["BB", "B", "CCC", "D"]
-    scenarios: Optional[List[str]] = None
-    data_source: str = "real"
+    target_duration: float = Field(5.0, ge=0.25, le=30.0)
+    capital: float = Field(100_000, gt=0, le=1e9)
+    max_allocation: float = Field(0.2, gt=0, le=1.0)
+    objective_type: ObjectiveType = "Optimize Sharpe Ratio"
+    risk_free_rate: float = Field(0.01, ge=0, le=0.5)
+    max_junk_bond_allocation: float = Field(0.3, ge=0, le=1.0)
+    max_sector_allocation: float = Field(0.25, ge=0, le=1.0)
+    junk_bond_ratings: List[str] = Field(default=["BB", "B", "CCC", "D"], max_length=14)
+    scenarios: Optional[List[str]] = Field(default=None, max_length=20)
+    data_source: DataSource = "real"
+
 
 class BacktestRequest(BaseModel):
-    target_duration: float = 5.0
-    capital: float = 100000
-    max_allocation: float = 0.2
-    objective_type: str = "Optimize Sharpe Ratio"
-    risk_free_rate: float = 0.01
-    max_junk_bond_allocation: float = 0.3
-    max_sector_allocation: float = 0.25
-    junk_bond_ratings: List[str] = ["BB", "B", "CCC", "D"]
-    n_periods: int = 12
-    period_type: str = "monthly"
-    data_source: str = "real"
+    target_duration: float = Field(5.0, ge=0.25, le=30.0)
+    capital: float = Field(100_000, gt=0, le=1e9)
+    max_allocation: float = Field(0.2, gt=0, le=1.0)
+    objective_type: ObjectiveType = "Optimize Sharpe Ratio"
+    risk_free_rate: float = Field(0.01, ge=0, le=0.5)
+    max_junk_bond_allocation: float = Field(0.3, ge=0, le=1.0)
+    max_sector_allocation: float = Field(0.25, ge=0, le=1.0)
+    junk_bond_ratings: List[str] = Field(default=["BB", "B", "CCC", "D"], max_length=14)
+    n_periods: int = Field(12, ge=1, le=120)
+    period_type: PeriodType = "monthly"
+    data_source: DataSource = "real"
 
 # --- Helper ---
 
