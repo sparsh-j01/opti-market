@@ -21,13 +21,13 @@
 
 ## Live Demo
 
-- **Frontend:** _coming soon_ — Vercel deploy URL will go here
-- **Backend API:** _coming soon_ — Render deploy URL will go here
-- **Health check:** `/api/health`
+- **Frontend:** **[optimarket-psi.vercel.app](https://optimarket-psi.vercel.app)**
+- **Backend API:** **[opti-market.onrender.com](https://opti-market.onrender.com)** · [Swagger docs](https://opti-market.onrender.com/docs) · [Health check](https://opti-market.onrender.com/api/health)
 
 > The backend runs on Render's free tier and **cold-starts in 30-60s**
 > after idle. The frontend handles this with a 75s fetch timeout and a
-> friendly retry message.
+> friendly retry message. If the dashboard takes a moment on first load,
+> that's the backend waking up — not a bug.
 
 ---
 
@@ -251,35 +251,17 @@ python -m pytest tests/ -v
 that verify the LP/SLSQP wiring against known answers), data loaders, and
 risk engine.
 
-## Deployment
+## Rate Limits
 
-The repo is split for the standard "frontend on Vercel, FastAPI on Render"
-pattern.
+Per-IP protection so the free-tier backend can't be DoS'd by a single user:
 
-### Backend → Render
-1. New + → Web Service → connect this repo
-2. Root Directory: *(blank)* | Runtime: Python 3 | Build: `pip install -r requirements.txt`
-3. Start Command: `uvicorn server:app --host 0.0.0.0 --port $PORT`
-4. Add env var `ALLOWED_ORIGINS` once the frontend is deployed (see Step 3 below)
-
-`runtime.txt` pins Python 3.11.9. `/api/health` is exempt from rate
-limits so Render's health probes don't burn quota.
-
-### Frontend → Vercel
-1. Add New → Project → import this repo
-2. **Root Directory: `frontend`** (critical — Vercel must build from the subdir)
-3. Env var: `NEXT_PUBLIC_API_BASE_URL` = your Render URL (no trailing slash)
-
-### Wire CORS
-Once the Vercel URL is live, set `ALLOWED_ORIGINS` on Render to that URL
-(comma-separated if you have multiple domains). Render auto-redeploys.
-
-### Rate limits
-Per-IP, free tier protection:
-- `/api/yield-curve` — 30/min
-- `/api/bonds`, `/api/stress-scenarios` — 60/min
-- `/api/optimize`, `/api/stress-test` — 20/min
-- `/api/efficient-frontier`, `/api/monte-carlo`, `/api/backtest` — 10/min
+| Endpoint group | Limit |
+|---|---|
+| `/api/yield-curve` | 30 / min |
+| `/api/bonds`, `/api/stress-scenarios` | 60 / min |
+| `/api/optimize`, `/api/stress-test` | 20 / min |
+| `/api/efficient-frontier`, `/api/monte-carlo`, `/api/backtest` | 10 / min |
+| `/api/health` | exempt (Render probes) |
 
 ## API Endpoints
 
