@@ -1,7 +1,24 @@
 "use client";
 
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, LineChart, Line, Legend } from "recharts";
+import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line } from "recharts";
 import { MonteCarloResult, StressTestResult, BacktestResult } from "@/lib/api";
+
+// Direct end-of-line label: renders the series name at its final point only,
+// so overlapping lines are read at the line instead of via a legend.
+// DESIGN.md: mono ink, no color (color = risk only).
+const makeEndLabel = (text: string, fill: string, lastIdx: number) => {
+    const EndLabel = (p: { x?: number | string; y?: number | string; index?: number }) => {
+        if (p.index !== lastIdx) return null;
+        return (
+            <text x={(Number(p.x) || 0) + 8} y={Number(p.y) || 0} dy={3}
+                fontFamily="'IBM Plex Mono', monospace" fontSize={10.5} fill={fill}>
+                {text}
+            </text>
+        );
+    };
+    EndLabel.displayName = `EndLabel(${text})`;
+    return EndLabel;
+};
 
 // ========== Monte Carlo Panel ==========
 export function MonteCarloPanel({ data }: { data: MonteCarloResult }) {
@@ -35,22 +52,17 @@ export function MonteCarloPanel({ data }: { data: MonteCarloResult }) {
                 <ResponsiveContainer width="100%" height={260}>
                     <BarChart data={data.histogram} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(23,20,15,0.14)" />
-                        <XAxis dataKey="bin_mid" tick={{ fill: "#766f63", fontSize: 10 }} stroke="rgba(23,20,15,0.14)"
+                        <XAxis dataKey="bin_mid" tick={{ fill: "#766f63", fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} stroke="rgba(23,20,15,0.14)"
                             tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`} />
-                        <YAxis tick={{ fill: "#766f63", fontSize: 10 }} stroke="rgba(23,20,15,0.14)" />
+                        <YAxis tick={{ fill: "#766f63", fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} stroke="rgba(23,20,15,0.14)" />
                         <Tooltip contentStyle={{ background: "#fffcf4", border: "1px solid rgba(23,20,15,0.14)", borderRadius: "2px", color: "#17140f" }}
                             formatter={(val: unknown) => [Number(val), "Count"]}
                             labelFormatter={(v: unknown) => `P&L: $${Number(v).toLocaleString()}`} />
-                        <Bar dataKey="count" radius={[3, 3, 0, 0]} barSize={12}>
+                        <Bar dataKey="count" radius={[2, 2, 0, 0]} barSize={12}>
                             {data.histogram.map((entry, i) => (
-                                <rect key={i} fill={entry.bin_mid < 0 ? "#d84a1b" : "#17140f"} />
+                                <Cell key={i} fill={entry.bin_mid < 0 ? "#d84a1b" : "#17140f"} />
                             ))}
                         </Bar>
-                        <defs>
-                            <linearGradient id="mcBar" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#17140f" /><stop offset="100%" stopColor="rgba(23,20,15,0.45)" />
-                            </linearGradient>
-                        </defs>
                     </BarChart>
                 </ResponsiveContainer>
             </div>
@@ -118,13 +130,16 @@ export function StressTestPanel({ data }: { data: StressTestResult }) {
                 <ResponsiveContainer width="100%" height={220}>
                     <BarChart data={data.scenarios} layout="vertical" margin={{ left: 10, right: 30, top: 5, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(23,20,15,0.14)" horizontal={false} />
-                        <XAxis type="number" tick={{ fill: "#766f63", fontSize: 10 }} stroke="rgba(23,20,15,0.14)"
+                        <XAxis type="number" tick={{ fill: "#766f63", fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} stroke="rgba(23,20,15,0.14)"
                             tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`} />
-                        <YAxis type="category" dataKey="name" tick={{ fill: "#766f63", fontSize: 10 }} stroke="rgba(23,20,15,0.14)" width={120} />
+                        <YAxis type="category" dataKey="name" tick={{ fill: "#766f63", fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} stroke="rgba(23,20,15,0.14)" width={120} />
                         <Tooltip contentStyle={{ background: "#fffcf4", border: "1px solid rgba(23,20,15,0.14)", borderRadius: "2px", color: "#17140f" }}
                             formatter={(val: unknown) => [`$${Number(val).toLocaleString()}`, "P&L"]} />
-                        <Bar dataKey="pnl_dollar" radius={[0, 4, 4, 0]} barSize={18}
-                            fill="#17140f" />
+                        <Bar dataKey="pnl_dollar" radius={[0, 2, 2, 0]} barSize={18}>
+                            {data.scenarios.map((s, i) => (
+                                <Cell key={i} fill={s.pnl_dollar < 0 ? "#d84a1b" : "#17140f"} />
+                            ))}
+                        </Bar>
                     </BarChart>
                 </ResponsiveContainer>
             </div>
@@ -137,6 +152,12 @@ export function BacktestPanel({ data }: { data: BacktestResult }) {
     if (!data.success || !data.time_series || !data.summary) return null;
 
     const s = data.summary;
+
+    // Direct end-of-line labels beat a legend when series overlap: you read
+    // the name at the line, not by decoding a key. Renders only at the last
+    // point. DESIGN.md: labels in mono ink, no color (color = risk only).
+    const lastIdx = data.time_series.length - 1;
+    const endLabel = (text: string, fill: string) => makeEndLabel(text, fill, lastIdx);
 
     return (
         <div className="space-y-4">
@@ -186,18 +207,26 @@ export function BacktestPanel({ data }: { data: BacktestResult }) {
                     Cumulative Performance ({data.n_periods} {data.period_type} periods)
                 </h3>
                 <ResponsiveContainer width="100%" height={280}>
-                    <LineChart data={data.time_series} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
+                    <LineChart data={data.time_series} margin={{ top: 10, right: 92, left: 10, bottom: 10 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(23,20,15,0.14)" />
-                        <XAxis dataKey="period" tick={{ fill: "#766f63", fontSize: 11 }} stroke="rgba(23,20,15,0.14)" />
-                        <YAxis tick={{ fill: "#766f63", fontSize: 11 }} stroke="rgba(23,20,15,0.14)"
+                        <XAxis dataKey="period" tick={{ fill: "#766f63", fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }} stroke="rgba(23,20,15,0.14)" />
+                        <YAxis tick={{ fill: "#766f63", fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }} stroke="rgba(23,20,15,0.14)"
                             domain={['dataMin - 500', 'dataMax + 500']}
                             tickFormatter={(v: number) => `$${(v / 1000).toFixed(1)}k`} />
                         <Tooltip contentStyle={{ background: "#fffcf4", border: "1px solid rgba(23,20,15,0.14)", borderRadius: "2px", color: "#17140f" }}
-                            formatter={(val: unknown) => [`$${Number(val).toLocaleString()}`, ""]} />
-                        <Legend verticalAlign="top" align="right" wrapperStyle={{ paddingBottom: 10, fontSize: 12 }} />
-                        <Line dataKey="optimized" stroke="#17140f" strokeWidth={2.5} dot={false} name="Optimized" />
-                        <Line dataKey="equal_weight" stroke="#17140f" strokeWidth={2} dot={false} name="Equal Weight" strokeDasharray="5 5" />
-                        <Line dataKey="risk_free" stroke="rgba(23,20,15,0.30)" strokeWidth={1.5} dot={false} name="Risk-Free" strokeDasharray="3 3" />
+                            formatter={(val: unknown, name: unknown) => [`$${Number(val).toLocaleString()}`, String(name)]} />
+                        {/* Opacity-stepped ink separates the series (DESIGN.md
+                            categorical method); Optimized is the hero — full ink,
+                            solid. Direct end-labels replace the legend. */}
+                        <Line dataKey="risk_free" stroke="rgba(23,20,15,0.26)" strokeWidth={1.5} dot={false}
+                            name="Risk-Free" strokeDasharray="2 4" isAnimationActive={false}
+                            label={endLabel("Risk-Free", "rgba(23,20,15,0.45)")} />
+                        <Line dataKey="equal_weight" stroke="rgba(23,20,15,0.42)" strokeWidth={2} dot={false}
+                            name="Equal Weight" strokeDasharray="5 4" isAnimationActive={false}
+                            label={endLabel("Equal Weight", "rgba(23,20,15,0.62)")} />
+                        <Line dataKey="optimized" stroke="#17140f" strokeWidth={2.5} dot={false}
+                            name="Optimized" isAnimationActive={false}
+                            label={endLabel("Optimized", "#17140f")} />
                     </LineChart>
                 </ResponsiveContainer>
             </div>

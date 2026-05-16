@@ -34,6 +34,11 @@ const COLORS = Array.from({ length: 24 }, (_, i) => INK_STEPS[i % INK_STEPS.leng
 
 const ALL_RATINGS = ["AAA", "AA", "A", "BBB", "BB", "B", "CCC", "D"];
 
+// Real FINRA ratings are notched (AA+, A-, BBB-). Investment grade is BBB-
+// and above; strip the notch before classifying so AA+ isn't read as junk.
+const isInvestmentGrade = (rating: string) =>
+    ["AAA", "AA", "A", "BBB"].includes(rating.replace(/[+-]+$/, ""));
+
 function KPICard({ label, value }: { label: string; value: string }) {
     return (
         <div className="p-3"
@@ -130,9 +135,13 @@ export default function DashboardPage() {
                         max_junk_bond_allocation: maxJunk / 100, max_sector_allocation: maxSector / 100,
                         junk_bond_ratings: junkRatings, risk_free_rate: riskFreeRate, data_source: dataSource,
                     }) : Promise.resolve({ frontier: [] }),
-                    runMonteCarlo({ ...params, objective_type: "Optimize Sharpe Ratio", n_simulations: 10000 }),
-                    runStressTest({ ...params, objective_type: "Optimize Sharpe Ratio" }),
-                    runBacktest({ ...params, objective_type: "Optimize Sharpe Ratio", n_periods: 12, period_type: "monthly" }),
+                    // MC / Stress / Backtest analyze the SAME portfolio shown
+                    // in Overview — they inherit the user's chosen objective
+                    // via ...params (objective_type: objective), not a forced
+                    // Sharpe override.
+                    runMonteCarlo({ ...params, n_simulations: 10000 }),
+                    runStressTest({ ...params }),
+                    runBacktest({ ...params, n_periods: 12, period_type: "monthly" }),
                 ]);
                 setFrontier(frontierRes.frontier);
                 setMcData(mcRes);
@@ -162,8 +171,8 @@ export default function DashboardPage() {
                 <EngineBootOverlay />
                 <div className="text-center">
                     <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                        className="w-12 h-12 rounded-full mx-auto mb-4"
-                        style={{ border: "3px solid var(--border-color)", borderTopColor: "var(--accent-primary)" }} />
+                        className="w-12 h-12 mx-auto mb-4"
+                        style={{ borderRadius: "9999px", border: "3px solid var(--border-color)", borderTopColor: "var(--accent-primary)" }} />
                     <p className="text-sm" style={{ color: "var(--text-muted)" }}>Loading market data...</p>
                 </div>
             </div>
@@ -272,7 +281,7 @@ export default function DashboardPage() {
                     <div>
                         <div className="flex items-center justify-between mb-1.5">
                             <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-secondary)" }}>Duration</label>
-                            <span className="text-xs font-bold gradient-text">{targetDuration.toFixed(1)} yrs</span>
+                            <span className="text-xs font-bold gradient-text font-mono">{targetDuration.toFixed(1)} yrs</span>
                         </div>
                         <input type="range" min="2" max="10" step="0.1" value={targetDuration}
                             onChange={e => setTargetDuration(Number(e.target.value))} className="w-full" style={{ accentColor: "#17140f" }} />
@@ -282,7 +291,7 @@ export default function DashboardPage() {
                     <div>
                         <div className="flex items-center justify-between mb-1.5">
                             <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-secondary)" }}>Max per Bond</label>
-                            <span className="text-xs font-bold gradient-text">{maxAllocation}%</span>
+                            <span className="text-xs font-bold gradient-text font-mono">{maxAllocation}%</span>
                         </div>
                         <input type="range" min="5" max="50" step="1" value={maxAllocation}
                             onChange={e => setMaxAllocation(Number(e.target.value))} className="w-full" style={{ accentColor: "#17140f" }} />
@@ -320,7 +329,7 @@ export default function DashboardPage() {
                     <div>
                         <div className="flex items-center justify-between mb-1.5">
                             <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-secondary)" }}>Max Junk</label>
-                            <span className="text-xs font-bold gradient-text">{maxJunk}%</span>
+                            <span className="text-xs font-bold gradient-text font-mono">{maxJunk}%</span>
                         </div>
                         <input type="range" min="0" max="100" step="5" value={maxJunk}
                             onChange={e => setMaxJunk(Number(e.target.value))} className="w-full" style={{ accentColor: "#17140f" }} />
@@ -330,7 +339,7 @@ export default function DashboardPage() {
                     <div>
                         <div className="flex items-center justify-between mb-1.5">
                             <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-secondary)" }}>Max per Sector</label>
-                            <span className="text-xs font-bold gradient-text">{maxSector}%</span>
+                            <span className="text-xs font-bold gradient-text font-mono">{maxSector}%</span>
                         </div>
                         <input type="range" min="0" max="100" step="5" value={maxSector}
                             onChange={e => setMaxSector(Number(e.target.value))} className="w-full" style={{ accentColor: "#17140f" }} />
@@ -362,11 +371,11 @@ export default function DashboardPage() {
                     </div>
                     {bondsData && (
                         <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs" style={{ color: "var(--text-muted)" }}>
-                            <span><strong className="gradient-text">{bondsData.summary.total}</strong> bonds</span>
+                            <span><strong className="gradient-text font-mono">{bondsData.summary.total}</strong> bonds</span>
                             <span className="hidden sm:inline">·</span>
-                            <span><strong className="gradient-text">{bondsData.summary.sectors}</strong> sectors</span>
+                            <span><strong className="gradient-text font-mono">{bondsData.summary.sectors}</strong> sectors</span>
                             <span className="hidden sm:inline">·</span>
-                            <span><strong className="gradient-text">{(bondsData.summary.avg_yield * 100).toFixed(1)}%</strong> avg yield</span>
+                            <span><strong className="gradient-text font-mono">{(bondsData.summary.avg_yield * 100).toFixed(1)}%</strong> avg yield</span>
                         </div>
                     )}
                 </div>
@@ -388,9 +397,9 @@ export default function DashboardPage() {
                             <LineChart margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(23,20,15,0.14)" />
                                 <XAxis dataKey="maturity" type="number" domain={[0, 31]}
-                                    tick={{ fill: "#766f63", fontSize: 11 }} stroke="rgba(23,20,15,0.14)"
+                                    tick={{ fill: "#766f63", fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }} stroke="rgba(23,20,15,0.14)"
                                     tickFormatter={(v: number) => `${v}yr`} />
-                                <YAxis tick={{ fill: "#766f63", fontSize: 11 }} stroke="rgba(23,20,15,0.14)"
+                                <YAxis tick={{ fill: "#766f63", fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }} stroke="rgba(23,20,15,0.14)"
                                     tickFormatter={(v: number) => `${v.toFixed(1)}%`} />
                                 <Tooltip
                                     contentStyle={{ background: "#fffcf4", border: "1px solid rgba(23,20,15,0.14)", borderRadius: "2px", color: "#17140f" }}
@@ -426,8 +435,8 @@ export default function DashboardPage() {
                             <div className="flex items-center justify-between px-8 py-5" style={{ borderBottom: "1px solid var(--border-color)" }}>
                                 <div>
                                     <h2 className="text-xl font-bold" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>Bond Market</h2>
-                                    <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-                                        {bondsData.summary.total} synthetic bonds · {bondsData.summary.sectors} sectors · Avg yield: {(bondsData.summary.avg_yield * 100).toFixed(2)}%
+                                    <p className="text-xs mt-1 font-mono" style={{ color: "var(--text-muted)" }}>
+                                        {bondsData.summary.total} {dataSource === "real" ? "FINRA" : "synthetic"} bonds · {bondsData.summary.sectors} sectors · Avg yield: {(bondsData.summary.avg_yield * 100).toFixed(2)}%
                                     </p>
                                 </div>
                                 <button onClick={() => setShowBondsModal(false)}
@@ -455,8 +464,8 @@ export default function DashboardPage() {
                                                 <td className="px-4 py-2.5">
                                                     <span className="px-2 py-0.5 rounded-lg text-xs font-bold"
                                                         style={{
-                                                            background: ["AAA", "AA", "A", "BBB"].includes(b.Rating) ? "rgba(23,20,15,0.05)" : "rgba(216,74,27,0.08)",
-                                                            color: ["AAA", "AA", "A", "BBB"].includes(b.Rating) ? "#17140f" : "#d84a1b"
+                                                            background: isInvestmentGrade(b.Rating) ? "rgba(23,20,15,0.05)" : "rgba(216,74,27,0.08)",
+                                                            color: isInvestmentGrade(b.Rating) ? "#17140f" : "#d84a1b"
                                                         }}>{b.Rating}</span>
                                                 </td>
                                                 <td className="px-4 py-2.5 font-mono">{(b.Yield * 100).toFixed(2)}%</td>
@@ -502,10 +511,12 @@ export default function DashboardPage() {
                                 {optimizing && (
                                     <div className="flex flex-col items-center justify-center py-16">
                                         <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                                            className="w-14 h-14 rounded-full mb-6"
-                                            style={{ border: "3px solid var(--border-color)", borderTopColor: "var(--accent-primary)" }} />
+                                            className="w-14 h-14 mb-6"
+                                            style={{ borderRadius: "9999px", border: "3px solid var(--border-color)", borderTopColor: "var(--accent-primary)" }} />
                                         <p className="text-base font-medium" style={{ color: "var(--text-secondary)" }}>Running optimization...</p>
-                                        <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>Analyzing 150 bonds across 8 sectors</p>
+                                        <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
+                                            Analyzing {bondsData?.summary.total ?? "200+"} bonds across {bondsData?.summary.sectors ?? 8} sectors
+                                        </p>
                                     </div>
                                 )}
 
@@ -618,8 +629,8 @@ export default function DashboardPage() {
                                                                     <td className="px-3 py-2">
                                                                         <span className="px-1.5 py-0.5 rounded text-xs font-bold"
                                                                             style={{
-                                                                                background: ["AAA", "AA", "A", "BBB"].includes(b.Rating) ? "rgba(23,20,15,0.05)" : "rgba(216,74,27,0.08)",
-                                                                                color: ["AAA", "AA", "A", "BBB"].includes(b.Rating) ? "#17140f" : "#d84a1b"
+                                                                                background: isInvestmentGrade(b.Rating) ? "rgba(23,20,15,0.05)" : "rgba(216,74,27,0.08)",
+                                                                                color: isInvestmentGrade(b.Rating) ? "#17140f" : "#d84a1b"
                                                                             }}>{b.Rating}</span>
                                                                     </td>
                                                                     <td className="px-3 py-2 font-mono">{(b.Yield * 100).toFixed(2)}%</td>
@@ -632,7 +643,7 @@ export default function DashboardPage() {
                                                         </tbody>
                                                     </table>
                                                 </div>
-                                                <p className="text-xs mt-3" style={{ color: "var(--text-muted)" }}>
+                                                <p className="text-xs mt-3 font-mono" style={{ color: "var(--text-muted)" }}>
                                                     Deployed: ${results.portfolio.reduce((s, b) => s + b["Investment ($)"], 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} / ${capital.toLocaleString()}
                                                 </p>
                                             </motion.div>
@@ -647,10 +658,10 @@ export default function DashboardPage() {
                                                         <ResponsiveContainer width="100%" height={280}>
                                                             <ScatterChart margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
                                                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(23,20,15,0.14)" />
-                                                                <XAxis dataKey="Volatility" type="number" tick={{ fill: "#766f63", fontSize: 11 }} stroke="rgba(23,20,15,0.14)"
+                                                                <XAxis dataKey="Volatility" type="number" tick={{ fill: "#766f63", fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }} stroke="rgba(23,20,15,0.14)"
                                                                     tickFormatter={(v: number) => `${(v * 100).toFixed(1)}%`}
                                                                     name="Risk" domain={["auto", "auto"]} />
-                                                                <YAxis dataKey="Yield" type="number" tick={{ fill: "#766f63", fontSize: 11 }} stroke="rgba(23,20,15,0.14)"
+                                                                <YAxis dataKey="Yield" type="number" tick={{ fill: "#766f63", fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }} stroke="rgba(23,20,15,0.14)"
                                                                     tickFormatter={(v: number) => `${(v * 100).toFixed(1)}%`}
                                                                     name="Return" domain={["auto", "auto"]} />
                                                                 <Tooltip contentStyle={{ background: "#fffcf4", border: "1px solid rgba(23,20,15,0.14)", borderRadius: "2px", color: "#17140f" }}
@@ -671,12 +682,12 @@ export default function DashboardPage() {
                                                     <ResponsiveContainer width="100%" height={Math.max(250, results.allocations.by_company.length * 40)}>
                                                         <BarChart data={results.allocations.by_company} layout="vertical" margin={{ left: 20, right: 30, top: 5, bottom: 5 }}>
                                                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(23,20,15,0.14)" horizontal={false} />
-                                                            <XAxis type="number" tick={{ fill: "#766f63", fontSize: 11 }} stroke="rgba(23,20,15,0.14)"
+                                                            <XAxis type="number" tick={{ fill: "#766f63", fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }} stroke="rgba(23,20,15,0.14)"
                                                                 tickFormatter={(v: number) => `${v}%`} />
-                                                            <YAxis type="category" dataKey="Company" tick={{ fill: "#766f63", fontSize: 12 }} stroke="rgba(23,20,15,0.14)" width={140} />
+                                                            <YAxis type="category" dataKey="Company" tick={{ fill: "#766f63", fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }} stroke="rgba(23,20,15,0.14)" width={140} />
                                                             <Tooltip contentStyle={{ background: "#fffcf4", border: "1px solid rgba(23,20,15,0.14)", borderRadius: "2px", color: "#17140f" }}
                                                                 formatter={(val: unknown) => [`${Number(val).toFixed(1)}%`, "Allocation"]} />
-                                                            <Bar dataKey="Allocation %" radius={[0, 6, 6, 0]} fill="url(#barGM)" barSize={24} />
+                                                            <Bar dataKey="Allocation %" radius={[0, 2, 2, 0]} fill="url(#barGM)" barSize={24} />
                                                             <defs>
                                                                 <linearGradient id="barGM" x1="0" y1="0" x2="1" y2="0">
                                                                     <stop offset="0%" stopColor="#17140f" /><stop offset="100%" stopColor="rgba(23,20,15,0.45)" />
