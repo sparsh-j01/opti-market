@@ -1,30 +1,82 @@
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    --bg-primary: #f5f5f7;
-    --bg-secondary: #eeeef0;
-    --bg-card: #ffffff;
-    --bg-card-hover: #fafafa;
-    --border-color: #e2e2e8;
-    --border-glow: #d0d0dc;
-    --text-primary: #1a1a2e;
-    --text-secondary: #6b6b80;
-    --text-muted: #9b9bae;
-    --accent-primary: #6c5ce7;
-    --accent-secondary: #a29bfe;
-    --accent-dark: #4a3fcf;
-    --accent-pink: #fd79a8;
-    --accent-peach: #fdcb6e;
-    --accent-green: #00b894;
-    --gradient-main: linear-gradient(135deg, #6c5ce7, #a29bfe);
-    --gradient-card: linear-gradient(145deg, #ffffff 0%, #fafafe 100%);
-    --glass-bg: rgba(255, 255, 255, 0.75);
-    --glass-border: rgba(0, 0, 0, 0.06);
-  }
+/* ============================================================
+   OptiMarket design system — see DESIGN.md (source of truth)
+   Warm paper · engraved ink · orange = risk ONLY · no dark mode
+   Fraunces (display) / Literata (body) / IBM Plex Mono (data)
+   ============================================================ */
+
+@theme {
+  /* Map Tailwind's font utilities to the design families.
+     font-sans (default body) -> Literata; font-mono -> IBM Plex Mono;
+     font-serif -> Fraunces. All free / open-source ($0 product). */
+  --font-sans: "Literata", Georgia, "Times New Roman", serif;
+  --font-serif: "Fraunces", Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Near-zero radius. 0 default, 2px max on interactive controls. */
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 2px;
+  --radius-2xl: 2px;
+  --radius-3xl: 2px;
+  --radius-full: 2px;
 }
 
 @layer base {
+  :root {
+    /* --- Surfaces (OKLCH, warm-tinted neutrals — never #000/#fff) --- */
+    --paper: oklch(0.928 0.022 83);
+    --surface: oklch(0.985 0.013 90);
+    --bg-primary: oklch(0.928 0.022 83);
+    --bg-secondary: oklch(0.900 0.026 84);
+    --bg-card: oklch(0.985 0.013 90);
+    --bg-card-hover: oklch(0.985 0.013 90);
+
+    /* --- Hairlines (ink at low alpha — warm, not neutral black) --- */
+    --hairline: oklch(0.19 0.012 70 / 0.14);
+    --hairline-strong: oklch(0.19 0.012 70 / 0.28);
+    --border-color: oklch(0.19 0.012 70 / 0.14);
+    --border-glow: oklch(0.19 0.012 70 / 0.28);
+
+    /* --- Ink --- */
+    --ink: oklch(0.19 0.012 70);
+    --muted: oklch(0.52 0.018 78);
+    --text-primary: oklch(0.19 0.012 70);
+    --text-secondary: oklch(0.52 0.018 78);
+    --text-muted: oklch(0.52 0.018 78);
+
+    /* --- The one saturated color: risk / loss / danger only --- */
+    --danger: oklch(0.585 0.19 38);
+
+    /* Legacy accent tokens remapped to ink so nothing reads as
+       decorative color. Color in this system can only mean risk. */
+    --accent-primary: #17140f;
+    --accent-secondary: rgba(23, 20, 15, 0.45);
+    --accent-dark: #17140f;
+    --accent-pink: #d84a1b;   /* was decorative pink -> risk orange */
+    --accent-peach: #766f63;  /* was a 3rd hue -> muted ink */
+    --accent-green: #17140f;  /* success = ink, never green */
+
+    /* Legacy gradient/glass tokens flattened to ink / surface. */
+    --gradient-main: #17140f;
+    --gradient-card: #fffcf4;
+    --glass-bg: #fffcf4;
+    --glass-border: rgba(23, 20, 15, 0.14);
+
+    /* Ink at opacity steps — the only categorical "palette". */
+    --ink-1: #17140f;
+    --ink-2: rgba(23, 20, 15, 0.7);
+    --ink-3: rgba(23, 20, 15, 0.45);
+    --ink-4: rgba(23, 20, 15, 0.3);
+
+    /* Strong custom easing (Emil Kowalski: built-in eases lack punch).
+       DESIGN.md asks for ease-out on enter; this is that, with intent. */
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  }
+
   * {
     box-sizing: border-box;
     margin: 0;
@@ -36,186 +88,226 @@
   }
 
   body {
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Literata", Georgia, "Times New Roman", serif;
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
   }
 
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Fraunces", Georgia, serif;
+    font-optical-sizing: auto;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+
+  /* Numbers always tabular, always mono. Non-negotiable. */
+  .font-mono,
+  code,
+  kbd,
+  samp,
+  table {
+    font-family: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
   ::selection {
-    background: rgba(108, 92, 231, 0.2);
-    color: #1a1a2e;
+    background: rgba(23, 20, 15, 0.12);
+    color: var(--ink);
   }
 
   ::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
+    height: 8px;
   }
 
   ::-webkit-scrollbar-track {
-    background: var(--bg-primary);
+    background: var(--paper);
   }
 
   ::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 3px;
+    background: var(--hairline-strong);
+    border-radius: 0;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--accent-primary);
+    background: var(--muted);
   }
 }
 
-/* Utility layers */
-@layer utilities {
-  .glass {
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
+/* ============================================================
+   Signature device: the ruler-spine.
+   A single left vertical hairline running the whole product,
+   with section ticks. The precision of the instrument is the
+   identity. Apply .spine to a full-height page wrapper.
+   ============================================================ */
+@layer components {
+  .spine {
+    position: relative;
+    padding-left: 46px;
   }
 
+  .spine::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 46px;
+    width: 1px;
+    background: var(--hairline);
+    pointer-events: none;
+  }
+
+  /* A tick on the spine — place inside a .spine with position context. */
+  .spine-tick {
+    position: absolute;
+    left: 40px;
+    width: 12px;
+    height: 1px;
+    background: var(--hairline-strong);
+  }
+
+  @media (max-width: 640px) {
+    .spine {
+      padding-left: 20px;
+    }
+    .spine::before {
+      left: 20px;
+    }
+    .spine-tick {
+      left: 14px;
+    }
+  }
+
+  /* The mono micro-label used for controls / axes / kickers. */
+  .mono-label {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+}
+
+/* ============================================================
+   Legacy utility classes from the old AI-slop UI are kept as
+   names but redefined to be design-compliant, so existing
+   markup stays consistent without per-element rewrites.
+   ============================================================ */
+@layer utilities {
+  /* No glassmorphism. Flat raised ledger surface + hairline. */
+  .glass {
+    background: var(--surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid var(--hairline);
+  }
+
+  /* No gradient text. Ink, plain. */
   .gradient-text {
-    background: var(--gradient-main);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    color: var(--ink);
+    font-weight: 600;
   }
 
   .gradient-border {
-    border: 1px solid transparent;
-    background-image: linear-gradient(var(--bg-card), var(--bg-card)), var(--gradient-main);
-    background-origin: border-box;
-    background-clip: padding-box, border-box;
+    border: 1px solid var(--hairline);
+    background: var(--surface);
   }
 
+  /* No glow. */
   .glow-accent {
-    box-shadow: 0 0 20px rgba(108, 92, 231, 0.12), 0 0 40px rgba(108, 92, 231, 0.04);
+    box-shadow: none;
   }
 
+  /* Flat ledger card: hairline, near-zero radius, no hover lift. */
   .card-soft {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 1rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 2px;
+    transition: border-color 150ms var(--ease-out);
   }
 
   .card-soft:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(108, 92, 231, 0.08);
-    border-color: rgba(108, 92, 231, 0.2);
+    transform: none;
+    box-shadow: none;
+    border-color: var(--hairline-strong);
   }
 
   .card-hover {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: border-color 150ms var(--ease-out);
   }
 
   .card-hover:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(108, 92, 231, 0.1);
-    border-color: rgba(108, 92, 231, 0.25);
+    transform: none;
+    box-shadow: none;
+    border-color: var(--hairline-strong);
   }
 
+  /* Decorative motion neutralized — minimal-functional only. */
   .animate-float {
-    animation: float 6s ease-in-out infinite;
+    animation: none;
   }
 
   .animate-pulse-glow {
-    animation: pulse-glow 3s ease-in-out infinite;
+    animation: none;
   }
 
   .animate-gradient {
-    background-size: 200% 200%;
-    animation: gradient-shift 8s ease infinite;
+    animation: none;
   }
 }
 
-/* Keyframes */
-@keyframes float {
-
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-@keyframes pulse-glow {
-
-  0%,
-  100% {
-    box-shadow: 0 4px 15px rgba(108, 92, 231, 0.15);
-  }
-
-  50% {
-    box-shadow: 0 4px 30px rgba(108, 92, 231, 0.3), 0 0 60px rgba(162, 155, 254, 0.1);
-  }
-}
-
-@keyframes gradient-shift {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-/* Subtle dot pattern for sections */
+/* Decorative patterns removed (were violet dot/radial slop). */
 .dot-pattern {
-  background-image: radial-gradient(circle, rgba(108, 92, 231, 0.06) 1px, transparent 1px);
-  background-size: 24px 24px;
+  background-image: none;
 }
 
-/* Soft radial glow for hero */
 .radial-glow {
   position: relative;
 }
 
 .radial-glow::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(108, 92, 231, 0.06) 0%, transparent 70%);
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  z-index: 0;
+  content: none;
 }
 
-/* Fix range slider thumb alignment */
+/* Range slider: ink accent, not violet. */
 input[type="range"] {
   vertical-align: middle;
   margin: 0;
+  accent-color: #17140f;
+}
+
+/* Tabular numerals everywhere numbers live. */
+input,
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Press feedback — buttons must feel like they heard the user.
+   Subtle (DESIGN.md: measured, not styled). */
+.press {
+  transition: transform 120ms var(--ease-out), border-color 120ms var(--ease-out);
+}
+.press:active {
+  transform: scale(0.985);
+}
+
+/* Reduced motion: keep opacity (aids comprehension), drop movement.
+   Emil Kowalski: "fewer and gentler, not zero." */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .press:active {
+    transform: none;
+  }
 }

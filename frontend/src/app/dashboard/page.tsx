@@ -16,21 +16,35 @@ import {
 import { MonteCarloPanel, StressTestPanel, BacktestPanel } from "@/components/AnalyticsPanels";
 import EngineBootOverlay from "@/components/EngineBootOverlay";
 
-const COLORS = [
-    "#6c5ce7", "#a29bfe", "#fd79a8", "#fdcb6e", "#00b894",
-    "#e17055", "#0984e3", "#00cec9", "#fab1a0", "#81ecec",
-    "#74b9ff", "#dfe6e9", "#636e72", "#b2bec3", "#2d3436",
-    "#ffeaa7", "#55efc4", "#ff7675", "#a29bfe", "#fd79a8"
+/* Emil Kowalski strong ease-out — built-in eases lack punch. */
+const EASE_OUT = [0.23, 1, 0.32, 1] as const;
+const settleContainer = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
+const settleItem = {
+    hidden: { opacity: 0, y: 8, scale: 0.98 },
+    show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.32, ease: EASE_OUT } },
+};
+
+// Categorical series use opacity-stepped ink only — never a multi-hue
+// palette. Color in this system can only mean risk (see DESIGN.md).
+const INK_STEPS = [
+    "rgba(23,20,15,0.92)", "rgba(23,20,15,0.66)", "rgba(23,20,15,0.46)",
+    "rgba(23,20,15,0.32)", "rgba(23,20,15,0.22)", "rgba(23,20,15,0.15)",
 ];
+const COLORS = Array.from({ length: 24 }, (_, i) => INK_STEPS[i % INK_STEPS.length]);
 
 const ALL_RATINGS = ["AAA", "AA", "A", "BBB", "BB", "B", "CCC", "D"];
 
 function KPICard({ label, value }: { label: string; value: string }) {
     return (
-        <div className="rounded-xl p-3 text-center"
-            style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)" }}>
-            <div className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: "var(--text-muted)" }}>{label}</div>
-            <div className="text-base font-bold gradient-text">{value}</div>
+        <div className="p-3"
+            style={{ background: "var(--surface)", border: "1px solid var(--hairline)", borderRadius: "2px" }}>
+            <div className="mono-label mb-1">{label}</div>
+            <div
+                className="text-base font-mono"
+                style={{ color: "var(--ink)", fontVariantNumeric: "tabular-nums" }}
+            >
+                {value}
+            </div>
         </div>
     );
 }
@@ -60,6 +74,15 @@ export default function DashboardPage() {
     const [junkRatings, setJunkRatings] = useState(["BB", "B", "CCC", "D"]);
     const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
     const [dataAsOf, setDataAsOf] = useState<string | null>(null);
+    const [isDesktop, setIsDesktop] = useState(true);
+
+    useEffect(() => {
+        const mq = window.matchMedia("(min-width: 768px)");
+        const sync = () => setIsDesktop(mq.matches);
+        sync();
+        mq.addEventListener("change", sync);
+        return () => mq.removeEventListener("change", sync);
+    }, []);
 
     useEffect(() => {
         fetch("/data/data_meta.json")
@@ -153,11 +176,11 @@ export default function DashboardPage() {
             {/* Mobile sidebar toggle */}
             <button
                 onClick={() => setMobileSidebarOpen(true)}
-                className="md:hidden fixed bottom-4 right-4 z-[90] w-14 h-14 rounded-full text-white font-bold shadow-lg flex items-center justify-center"
-                style={{ background: "var(--gradient-main)", boxShadow: "0 8px 24px rgba(108,92,231,0.35)" }}
+                className="press md:hidden fixed bottom-4 right-4 z-[90] px-4 py-3 flex items-center justify-center"
+                style={{ background: "var(--ink)", color: "var(--paper)", borderRadius: "2px", fontFamily: "'IBM Plex Mono', monospace", fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.12em" }}
                 aria-label="Open controls"
             >
-                ⚙
+                Controls
             </button>
 
             {/* Mobile backdrop */}
@@ -166,16 +189,19 @@ export default function DashboardPage() {
                     <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         className="md:hidden fixed inset-0 z-[95]"
-                        style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}
+                        style={{ background: "rgba(23,20,15,0.55)" }}
                         onClick={() => setMobileSidebarOpen(false)}
                     />
                 )}
             </AnimatePresence>
 
-            {/* ===== SIDEBAR ===== */}
-            <aside
-                className={`fixed md:relative top-0 left-0 z-[96] md:z-auto w-72 h-full md:h-auto md:flex-shrink-0 overflow-y-auto p-5 flex flex-col pt-20 md:pt-5 transition-transform duration-300 ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+            {/* ===== SIDEBAR (Emil spring drawer on mobile) ===== */}
+            <motion.aside
+                className="fixed md:relative top-0 left-0 z-[96] md:z-auto w-72 h-full md:h-auto md:flex-shrink-0 overflow-y-auto p-5 flex flex-col pt-20 md:pt-5"
                 style={{ background: "var(--bg-card)", borderRight: "1px solid var(--border-color)" }}
+                initial={false}
+                animate={{ x: isDesktop ? 0 : mobileSidebarOpen ? 0 : "-100%" }}
+                transition={{ type: "spring", duration: 0.5, bounce: 0.15 }}
             >
                 {/* Mobile close button */}
                 <button
@@ -187,7 +213,7 @@ export default function DashboardPage() {
                     ✕
                 </button>
                 <div className="mb-4">
-                    <h2 className="text-base font-bold" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                    <h2 className="text-base font-bold" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
                         <span className="gradient-text">OptiMarket</span>
                     </h2>
                     <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>Bond Portfolio Optimizer</p>
@@ -206,12 +232,12 @@ export default function DashboardPage() {
                         <div className="flex rounded-xl overflow-hidden" style={{ border: "1px solid var(--border-color)" }}>
                             {["real", "synthetic"].map(src => (
                                 <button key={src} onClick={() => { setDataSource(src); setLoading(true); }}
-                                    className="flex-1 py-2 text-xs font-medium transition-all duration-200"
+                                    className="press flex-1 py-2 text-xs font-medium transition-colors duration-200"
                                     style={{
-                                        background: dataSource === src ? "#00b894" : "transparent",
+                                        background: dataSource === src ? "#17140f" : "transparent",
                                         color: dataSource === src ? "#fff" : "var(--text-secondary)",
                                     }}>
-                                    {src === "real" ? "🏦 Real (FINRA)" : "🔬 Synthetic"}
+                                    {src === "real" ? "Real (FINRA)" : "Synthetic"}
                                 </button>
                             ))}
                         </div>
@@ -223,7 +249,7 @@ export default function DashboardPage() {
                         <div className="flex rounded-xl overflow-hidden" style={{ border: "1px solid var(--border-color)" }}>
                             {["Maximize Yield", "Optimize Sharpe Ratio"].map(opt => (
                                 <button key={opt} onClick={() => setObjective(opt)}
-                                    className="flex-1 py-2 text-xs font-medium transition-all duration-200"
+                                    className="press flex-1 py-2 text-xs font-medium transition-colors duration-200"
                                     style={{
                                         background: objective === opt ? "var(--accent-primary)" : "transparent",
                                         color: objective === opt ? "#fff" : "var(--text-secondary)",
@@ -249,7 +275,7 @@ export default function DashboardPage() {
                             <span className="text-xs font-bold gradient-text">{targetDuration.toFixed(1)} yrs</span>
                         </div>
                         <input type="range" min="2" max="10" step="0.1" value={targetDuration}
-                            onChange={e => setTargetDuration(Number(e.target.value))} className="w-full" style={{ accentColor: "#6c5ce7" }} />
+                            onChange={e => setTargetDuration(Number(e.target.value))} className="w-full" style={{ accentColor: "#17140f" }} />
                     </div>
 
                     {/* Max per Bond */}
@@ -259,7 +285,7 @@ export default function DashboardPage() {
                             <span className="text-xs font-bold gradient-text">{maxAllocation}%</span>
                         </div>
                         <input type="range" min="5" max="50" step="1" value={maxAllocation}
-                            onChange={e => setMaxAllocation(Number(e.target.value))} className="w-full" style={{ accentColor: "#6c5ce7" }} />
+                            onChange={e => setMaxAllocation(Number(e.target.value))} className="w-full" style={{ accentColor: "#17140f" }} />
                     </div>
 
                     {/* Risk-Free Rate (Sharpe only) */}
@@ -280,11 +306,11 @@ export default function DashboardPage() {
                         <div className="flex flex-wrap gap-1.5">
                             {ALL_RATINGS.map(r => (
                                 <button key={r} onClick={() => toggleJunkRating(r)}
-                                    className="px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all"
+                                    className="press px-2.5 py-1 rounded-md text-[10px] font-semibold transition-colors"
                                     style={{
-                                        background: junkRatings.includes(r) ? "rgba(253,121,168,0.1)" : "var(--bg-primary)",
-                                        border: `1px solid ${junkRatings.includes(r) ? "rgba(253,121,168,0.3)" : "var(--border-color)"}`,
-                                        color: junkRatings.includes(r) ? "#fd79a8" : "var(--text-secondary)",
+                                        background: junkRatings.includes(r) ? "rgba(216,74,27,0.08)" : "var(--bg-primary)",
+                                        border: `1px solid ${junkRatings.includes(r) ? "rgba(216,74,27,0.30)" : "var(--border-color)"}`,
+                                        color: junkRatings.includes(r) ? "#d84a1b" : "var(--text-secondary)",
                                     }}>{r}</button>
                             ))}
                         </div>
@@ -297,7 +323,7 @@ export default function DashboardPage() {
                             <span className="text-xs font-bold gradient-text">{maxJunk}%</span>
                         </div>
                         <input type="range" min="0" max="100" step="5" value={maxJunk}
-                            onChange={e => setMaxJunk(Number(e.target.value))} className="w-full" style={{ accentColor: "#6c5ce7" }} />
+                            onChange={e => setMaxJunk(Number(e.target.value))} className="w-full" style={{ accentColor: "#17140f" }} />
                     </div>
 
                     {/* Max Sector */}
@@ -307,24 +333,24 @@ export default function DashboardPage() {
                             <span className="text-xs font-bold gradient-text">{maxSector}%</span>
                         </div>
                         <input type="range" min="0" max="100" step="5" value={maxSector}
-                            onChange={e => setMaxSector(Number(e.target.value))} className="w-full" style={{ accentColor: "#6c5ce7" }} />
+                            onChange={e => setMaxSector(Number(e.target.value))} className="w-full" style={{ accentColor: "#17140f" }} />
                     </div>
                 </div>
 
                 {/* Bottom actions */}
                 <div className="mt-4 space-y-2">
                     <button onClick={() => setShowBondsModal(true)}
-                        className="w-full py-2.5 rounded-xl text-xs font-medium transition-all"
+                        className="press w-full py-2.5 rounded-xl text-xs font-medium transition-colors"
                         style={{ border: "1px solid var(--border-color)", color: "var(--text-secondary)", background: "var(--bg-primary)" }}>
                         View All Bonds
                     </button>
                     <button onClick={() => { setMobileSidebarOpen(false); handleOptimize(); }} disabled={optimizing}
-                        className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
-                        style={{ background: "var(--gradient-main)", boxShadow: "0 4px 20px rgba(108,92,231,0.25)" }}>
+                        className="w-full py-3 rounded-xl text-sm font-bold text-white press transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{ background: "var(--gradient-main)" }}>
                         RUN OPTIMIZER
                     </button>
                 </div>
-            </aside>
+            </motion.aside>
 
             {/* ===== MAIN CONTENT — Yield Curve ===== */}
             <main className="flex-1 md:h-full md:overflow-hidden p-4 sm:p-6 pt-16 md:pt-16 pb-24 md:pb-6 flex flex-col">
@@ -332,7 +358,7 @@ export default function DashboardPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
                     <div className="flex items-center gap-2">
                         <div className="w-1 h-5 rounded-full" style={{ background: "var(--accent-primary)" }} />
-                        <h2 className="text-sm font-bold" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Live Treasury Yield Curve</h2>
+                        <h2 className="text-sm font-bold" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>Live Treasury Yield Curve</h2>
                     </div>
                     {bondsData && (
                         <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs" style={{ color: "var(--text-muted)" }}>
@@ -360,20 +386,20 @@ export default function DashboardPage() {
                     <div className="flex-1 min-h-[320px] md:min-h-0 rounded-2xl p-3 sm:p-5" style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)" }}>
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e2e2e8" />
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(23,20,15,0.14)" />
                                 <XAxis dataKey="maturity" type="number" domain={[0, 31]}
-                                    tick={{ fill: "#6b6b80", fontSize: 11 }} stroke="#e2e2e8"
+                                    tick={{ fill: "#766f63", fontSize: 11 }} stroke="rgba(23,20,15,0.14)"
                                     tickFormatter={(v: number) => `${v}yr`} />
-                                <YAxis tick={{ fill: "#6b6b80", fontSize: 11 }} stroke="#e2e2e8"
+                                <YAxis tick={{ fill: "#766f63", fontSize: 11 }} stroke="rgba(23,20,15,0.14)"
                                     tickFormatter={(v: number) => `${v.toFixed(1)}%`} />
                                 <Tooltip
-                                    contentStyle={{ background: "#fff", border: "1px solid #e2e2e8", borderRadius: "10px", color: "#1a1a2e", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
+                                    contentStyle={{ background: "#fffcf4", border: "1px solid rgba(23,20,15,0.14)", borderRadius: "2px", color: "#17140f" }}
                                     formatter={(val: unknown) => [`${Number(val).toFixed(2)}%`, "Yield"]}
                                     labelFormatter={(val: unknown) => `${Number(val).toFixed(1)} years`} />
                                 <Legend verticalAlign="top" align="right" wrapperStyle={{ paddingBottom: 10, fontSize: 12 }} />
-                                <Line data={yieldCurveChartData} dataKey="yield" stroke="#6c5ce7" strokeWidth={2.5} dot={false} name="Nelson-Siegel Curve" />
+                                <Line data={yieldCurveChartData} dataKey="yield" stroke="#17140f" strokeWidth={2.5} dot={false} name="Nelson-Siegel Curve" />
                                 <Line data={dataPoints} dataKey="yield" stroke="transparent" strokeWidth={0} name="Live Treasury Rates"
-                                    dot={{ r: 6, fill: "#fd79a8", stroke: "#fd79a8" }} />
+                                    dot={{ r: 5, fill: "#fffcf4", stroke: "#17140f", strokeWidth: 1.5 }} />
                             </LineChart>
                         </ResponsiveContainer>
                     </div>
@@ -386,7 +412,7 @@ export default function DashboardPage() {
                     <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         className="fixed inset-0 z-[100] flex items-start justify-center pt-20 overflow-y-auto"
-                        style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(6px)" }}
+                        style={{ background: "rgba(23,20,15,0.55)" }}
                         onClick={(e) => { if (e.target === e.currentTarget) setShowBondsModal(false); }}
                     >
                         <motion.div
@@ -395,17 +421,17 @@ export default function DashboardPage() {
                             exit={{ opacity: 0, y: 40, scale: 0.95 }}
                             transition={{ duration: 0.3 }}
                             className="w-full max-w-5xl mx-4 mb-8 rounded-3xl overflow-hidden"
-                            style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)", boxShadow: "0 24px 80px rgba(0,0,0,0.15)" }}
+                            style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)" }}
                         >
                             <div className="flex items-center justify-between px-8 py-5" style={{ borderBottom: "1px solid var(--border-color)" }}>
                                 <div>
-                                    <h2 className="text-xl font-bold" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Bond Market</h2>
+                                    <h2 className="text-xl font-bold" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>Bond Market</h2>
                                     <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                                         {bondsData.summary.total} synthetic bonds · {bondsData.summary.sectors} sectors · Avg yield: {(bondsData.summary.avg_yield * 100).toFixed(2)}%
                                     </p>
                                 </div>
                                 <button onClick={() => setShowBondsModal(false)}
-                                    className="w-9 h-9 rounded-full flex items-center justify-center text-lg transition-all hover:scale-110"
+                                    className="w-9 h-9 rounded-full flex items-center justify-center text-lg press transition-colors"
                                     style={{ background: "var(--bg-primary)", color: "var(--text-secondary)" }}>✕</button>
                             </div>
                             <div className="max-h-[70vh] overflow-auto">
@@ -429,8 +455,8 @@ export default function DashboardPage() {
                                                 <td className="px-4 py-2.5">
                                                     <span className="px-2 py-0.5 rounded-lg text-xs font-bold"
                                                         style={{
-                                                            background: ["AAA", "AA", "A", "BBB"].includes(b.Rating) ? "rgba(0,184,148,0.1)" : "rgba(253,121,168,0.1)",
-                                                            color: ["AAA", "AA", "A", "BBB"].includes(b.Rating) ? "#00b894" : "#fd79a8"
+                                                            background: ["AAA", "AA", "A", "BBB"].includes(b.Rating) ? "rgba(23,20,15,0.05)" : "rgba(216,74,27,0.08)",
+                                                            color: ["AAA", "AA", "A", "BBB"].includes(b.Rating) ? "#17140f" : "#d84a1b"
                                                         }}>{b.Rating}</span>
                                                 </td>
                                                 <td className="px-4 py-2.5 font-mono">{(b.Yield * 100).toFixed(2)}%</td>
@@ -452,7 +478,7 @@ export default function DashboardPage() {
                     <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         className="fixed inset-0 z-[100] flex items-start justify-center pt-20 overflow-y-auto"
-                        style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(6px)" }}
+                        style={{ background: "rgba(23,20,15,0.55)" }}
                         onClick={(e) => { if (e.target === e.currentTarget && !optimizing) setShowResultsModal(false); }}
                     >
                         <motion.div
@@ -461,13 +487,13 @@ export default function DashboardPage() {
                             exit={{ opacity: 0, y: 40, scale: 0.95 }}
                             transition={{ duration: 0.3 }}
                             className="w-full max-w-5xl mx-4 mb-8 rounded-3xl overflow-hidden"
-                            style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)", boxShadow: "0 24px 80px rgba(0,0,0,0.15)" }}
+                            style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)" }}
                         >
                             <div className="flex items-center justify-between px-8 py-5" style={{ borderBottom: "1px solid var(--border-color)" }}>
-                                <h2 className="text-xl font-bold" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Optimization Results</h2>
+                                <h2 className="text-xl font-bold" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>Optimization Results</h2>
                                 {!optimizing && (
                                     <button onClick={() => setShowResultsModal(false)}
-                                        className="w-9 h-9 rounded-full flex items-center justify-center text-lg transition-all hover:scale-110"
+                                        className="w-9 h-9 rounded-full flex items-center justify-center text-lg press transition-colors"
                                         style={{ background: "var(--bg-primary)", color: "var(--text-secondary)" }}>✕</button>
                                 )}
                             </div>
@@ -485,32 +511,48 @@ export default function DashboardPage() {
 
                                 {results && !results.success && !optimizing && (
                                     <div className="rounded-2xl px-6 py-4 text-sm font-medium"
-                                        style={{ background: "rgba(253,121,168,0.08)", border: "1px solid rgba(253,121,168,0.15)", color: "#fd79a8" }}>
-                                        ❌ Optimization Failed: {results.error}. Try adjusting constraints.
+                                        style={{ background: "rgba(216,74,27,0.08)", border: "1px solid rgba(216,74,27,0.22)", color: "#d84a1b" }}>
+                                        Optimization failed — {results.error}. Try adjusting constraints.
                                     </div>
                                 )}
 
                                 {results && results.success && results.metrics && results.allocations && results.portfolio && !optimizing && (
                                     <>
-                                        <div className="rounded-2xl px-4 py-3 mb-6 text-sm font-medium"
-                                            style={{ background: "rgba(0,184,148,0.08)", border: "1px solid rgba(0,184,148,0.15)", color: "#00b894" }}>
-                                            ✅ Optimization successful — {objective}
-                                        </div>
+                                        <motion.div
+                                            className="rounded-2xl px-4 py-3 mb-6 text-sm font-medium"
+                                            style={{ background: "rgba(23,20,15,0.05)", border: "1px solid rgba(23,20,15,0.14)", color: "#17140f" }}
+                                            initial={{ opacity: 0, y: 6 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.25, ease: EASE_OUT }}
+                                        >
+                                            Optimization successful — {objective}
+                                        </motion.div>
 
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
-                                            <KPICard label="Portfolio Yield" value={`${(results.metrics["Portfolio Yield"] * 100).toFixed(2)}%`} />
-                                            <KPICard label="Duration" value={`${results.metrics["Portfolio Duration"].toFixed(2)} yrs`} />
-                                            <KPICard label="Volatility" value={`${(results.metrics["Portfolio Volatility"] * 100).toFixed(2)}%`} />
-                                            <KPICard label="Sharpe Ratio" value={results.metrics["Sharpe Ratio"].toFixed(2)} />
-                                        </div>
+                                        <motion.div
+                                            className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6"
+                                            variants={settleContainer}
+                                            initial="hidden"
+                                            animate="show"
+                                        >
+                                            {[
+                                                { label: "Portfolio Yield", value: `${(results.metrics["Portfolio Yield"] * 100).toFixed(2)}%` },
+                                                { label: "Duration", value: `${results.metrics["Portfolio Duration"].toFixed(2)} yrs` },
+                                                { label: "Volatility", value: `${(results.metrics["Portfolio Volatility"] * 100).toFixed(2)}%` },
+                                                { label: "Sharpe Ratio", value: results.metrics["Sharpe Ratio"].toFixed(2) },
+                                            ].map((k) => (
+                                                <motion.div key={k.label} variants={settleItem}>
+                                                    <KPICard label={k.label} value={k.value} />
+                                                </motion.div>
+                                            ))}
+                                        </motion.div>
 
                                         <div className="flex gap-2 mb-6 overflow-x-auto -mx-2 px-2 pb-2 [&::-webkit-scrollbar]:h-1">
                                             {tabs.map((t, i) => (
                                                 <button key={t} onClick={() => setActiveTab(i)}
-                                                    className="px-4 sm:px-5 py-2.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0"
+                                                    className="press px-4 sm:px-5 py-2.5 rounded-full text-xs sm:text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-shrink-0"
                                                     style={{
-                                                        background: activeTab === i ? "rgba(108,92,231,0.08)" : "transparent",
-                                                        border: `1px solid ${activeTab === i ? "rgba(108,92,231,0.25)" : "var(--border-color)"}`,
+                                                        background: activeTab === i ? "rgba(23,20,15,0.06)" : "transparent",
+                                                        border: `1px solid ${activeTab === i ? "rgba(23,20,15,0.22)" : "var(--border-color)"}`,
                                                         color: activeTab === i ? "var(--accent-primary)" : "var(--text-secondary)",
                                                     }}>{t}</button>
                                             ))}
@@ -519,7 +561,7 @@ export default function DashboardPage() {
                                         {activeTab === 0 && (
                                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                                                 <div className="rounded-2xl p-6" style={{ background: "var(--bg-primary)", border: "1px solid var(--border-color)" }}>
-                                                    <h3 className="text-sm font-semibold mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>By Rating</h3>
+                                                    <h3 className="text-sm font-semibold mb-2" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>By Rating</h3>
                                                     <ResponsiveContainer width="100%" height={280}>
                                                         <PieChart>
                                                             <Pie data={results.allocations.by_rating} dataKey="Allocation %" nameKey="Rating"
@@ -528,14 +570,14 @@ export default function DashboardPage() {
                                                                 labelLine={false}>
                                                                 {results.allocations.by_rating.map((_, i) => (<Cell key={i} fill={COLORS[i % COLORS.length]} />))}
                                                             </Pie>
-                                                            <Tooltip contentStyle={{ background: "#fff", border: "1px solid #e2e2e8", borderRadius: "12px", color: "#1a1a2e" }}
+                                                            <Tooltip contentStyle={{ background: "#fffcf4", border: "1px solid rgba(23,20,15,0.14)", borderRadius: "2px", color: "#17140f" }}
                                                                 formatter={(val: unknown) => [`${Number(val).toFixed(1)}%`, "Allocation"]} />
                                                             <Legend verticalAlign="bottom" wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
                                                         </PieChart>
                                                     </ResponsiveContainer>
                                                 </div>
                                                 <div className="rounded-2xl p-6" style={{ background: "var(--bg-primary)", border: "1px solid var(--border-color)" }}>
-                                                    <h3 className="text-sm font-semibold mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>By Sector</h3>
+                                                    <h3 className="text-sm font-semibold mb-2" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>By Sector</h3>
                                                     <ResponsiveContainer width="100%" height={280}>
                                                         <PieChart>
                                                             <Pie data={results.allocations.by_sector} dataKey="Allocation %" nameKey="Sector"
@@ -544,7 +586,7 @@ export default function DashboardPage() {
                                                                 labelLine={false}>
                                                                 {results.allocations.by_sector.map((_, i) => (<Cell key={i} fill={COLORS[i % COLORS.length]} />))}
                                                             </Pie>
-                                                            <Tooltip contentStyle={{ background: "#fff", border: "1px solid #e2e2e8", borderRadius: "12px", color: "#1a1a2e" }}
+                                                            <Tooltip contentStyle={{ background: "#fffcf4", border: "1px solid rgba(23,20,15,0.14)", borderRadius: "2px", color: "#17140f" }}
                                                                 formatter={(val: unknown) => [`${Number(val).toFixed(1)}%`, "Allocation"]} />
                                                             <Legend verticalAlign="bottom" wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
                                                         </PieChart>
@@ -576,8 +618,8 @@ export default function DashboardPage() {
                                                                     <td className="px-3 py-2">
                                                                         <span className="px-1.5 py-0.5 rounded text-xs font-bold"
                                                                             style={{
-                                                                                background: ["AAA", "AA", "A", "BBB"].includes(b.Rating) ? "rgba(0,184,148,0.1)" : "rgba(253,121,168,0.1)",
-                                                                                color: ["AAA", "AA", "A", "BBB"].includes(b.Rating) ? "#00b894" : "#fd79a8"
+                                                                                background: ["AAA", "AA", "A", "BBB"].includes(b.Rating) ? "rgba(23,20,15,0.05)" : "rgba(216,74,27,0.08)",
+                                                                                color: ["AAA", "AA", "A", "BBB"].includes(b.Rating) ? "#17140f" : "#d84a1b"
                                                                             }}>{b.Rating}</span>
                                                                     </td>
                                                                     <td className="px-3 py-2 font-mono">{(b.Yield * 100).toFixed(2)}%</td>
@@ -600,44 +642,44 @@ export default function DashboardPage() {
                                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
                                                 {frontier.length > 0 && (
                                                     <div className="rounded-2xl p-6" style={{ background: "var(--bg-primary)", border: "1px solid var(--border-color)" }}>
-                                                        <h3 className="text-sm font-semibold mb-1" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Efficient Frontier</h3>
-                                                        <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>Purple = optimal portfolios · Pink = yours</p>
+                                                        <h3 className="text-sm font-semibold mb-1" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>Efficient Frontier</h3>
+                                                        <p className="mono-label mb-4">Faint = efficient frontier · Solid cross = your portfolio</p>
                                                         <ResponsiveContainer width="100%" height={280}>
                                                             <ScatterChart margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
-                                                                <CartesianGrid strokeDasharray="3 3" stroke="#e2e2e8" />
-                                                                <XAxis dataKey="Volatility" type="number" tick={{ fill: "#6b6b80", fontSize: 11 }} stroke="#e2e2e8"
+                                                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(23,20,15,0.14)" />
+                                                                <XAxis dataKey="Volatility" type="number" tick={{ fill: "#766f63", fontSize: 11 }} stroke="rgba(23,20,15,0.14)"
                                                                     tickFormatter={(v: number) => `${(v * 100).toFixed(1)}%`}
                                                                     name="Risk" domain={["auto", "auto"]} />
-                                                                <YAxis dataKey="Yield" type="number" tick={{ fill: "#6b6b80", fontSize: 11 }} stroke="#e2e2e8"
+                                                                <YAxis dataKey="Yield" type="number" tick={{ fill: "#766f63", fontSize: 11 }} stroke="rgba(23,20,15,0.14)"
                                                                     tickFormatter={(v: number) => `${(v * 100).toFixed(1)}%`}
                                                                     name="Return" domain={["auto", "auto"]} />
-                                                                <Tooltip contentStyle={{ background: "#fff", border: "1px solid #e2e2e8", borderRadius: "12px", color: "#1a1a2e" }}
+                                                                <Tooltip contentStyle={{ background: "#fffcf4", border: "1px solid rgba(23,20,15,0.14)", borderRadius: "2px", color: "#17140f" }}
                                                                     formatter={(val: unknown, name: unknown) => [
                                                                         String(name) === "Yield" || String(name) === "Volatility" ? `${(Number(val) * 100).toFixed(2)}%` : Number(val).toFixed(2), String(name)
                                                                     ]} />
                                                                 <Legend verticalAlign="top" align="right" wrapperStyle={{ paddingBottom: 10, fontSize: 12 }} />
-                                                                <Scatter name="Frontier" data={frontier} fill="#6c5ce7" line={{ strokeWidth: 2 }} />
+                                                                <Scatter name="Frontier" data={frontier} fill="rgba(23,20,15,0.4)" line={{ strokeWidth: 2, stroke: "rgba(23,20,15,0.4)" }} />
                                                                 <Scatter name="Your Portfolio"
                                                                     data={[{ Volatility: results.metrics["Portfolio Volatility"], Yield: results.metrics["Portfolio Yield"] }]}
-                                                                    fill="#fd79a8" shape="cross" />
+                                                                    fill="#17140f" shape="cross" />
                                                             </ScatterChart>
                                                         </ResponsiveContainer>
                                                     </div>
                                                 )}
                                                 <div className="rounded-2xl p-6" style={{ background: "var(--bg-primary)", border: "1px solid var(--border-color)" }}>
-                                                    <h3 className="text-sm font-semibold mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Allocation by Company</h3>
+                                                    <h3 className="text-sm font-semibold mb-4" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>Allocation by Company</h3>
                                                     <ResponsiveContainer width="100%" height={Math.max(250, results.allocations.by_company.length * 40)}>
                                                         <BarChart data={results.allocations.by_company} layout="vertical" margin={{ left: 20, right: 30, top: 5, bottom: 5 }}>
-                                                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e2e8" horizontal={false} />
-                                                            <XAxis type="number" tick={{ fill: "#6b6b80", fontSize: 11 }} stroke="#e2e2e8"
+                                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(23,20,15,0.14)" horizontal={false} />
+                                                            <XAxis type="number" tick={{ fill: "#766f63", fontSize: 11 }} stroke="rgba(23,20,15,0.14)"
                                                                 tickFormatter={(v: number) => `${v}%`} />
-                                                            <YAxis type="category" dataKey="Company" tick={{ fill: "#6b6b80", fontSize: 12 }} stroke="#e2e2e8" width={140} />
-                                                            <Tooltip contentStyle={{ background: "#fff", border: "1px solid #e2e2e8", borderRadius: "12px", color: "#1a1a2e" }}
+                                                            <YAxis type="category" dataKey="Company" tick={{ fill: "#766f63", fontSize: 12 }} stroke="rgba(23,20,15,0.14)" width={140} />
+                                                            <Tooltip contentStyle={{ background: "#fffcf4", border: "1px solid rgba(23,20,15,0.14)", borderRadius: "2px", color: "#17140f" }}
                                                                 formatter={(val: unknown) => [`${Number(val).toFixed(1)}%`, "Allocation"]} />
                                                             <Bar dataKey="Allocation %" radius={[0, 6, 6, 0]} fill="url(#barGM)" barSize={24} />
                                                             <defs>
                                                                 <linearGradient id="barGM" x1="0" y1="0" x2="1" y2="0">
-                                                                    <stop offset="0%" stopColor="#6c5ce7" /><stop offset="100%" stopColor="#a29bfe" />
+                                                                    <stop offset="0%" stopColor="#17140f" /><stop offset="100%" stopColor="rgba(23,20,15,0.45)" />
                                                                 </linearGradient>
                                                             </defs>
                                                         </BarChart>

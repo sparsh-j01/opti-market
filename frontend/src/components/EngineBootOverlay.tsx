@@ -41,12 +41,12 @@ export default function EngineBootOverlay() {
       <div className="text-center max-w-md w-full">
         {isError ? (
           <>
-            <div className="text-4xl mb-4" aria-hidden>
-              ⚠️
+            <div className="mono-label mb-4" style={{ color: "var(--danger)" }}>
+              Engine error
             </div>
             <h2
               className="text-lg font-semibold mb-2"
-              style={{ color: "var(--text-primary)" }}
+              style={{ fontFamily: "'Fraunces', Georgia, serif", color: "var(--text-primary)" }}
             >
               Couldn&apos;t start the in-browser engine
             </h2>
@@ -93,7 +93,7 @@ export default function EngineBootOverlay() {
               style={{ background: "var(--border-color)" }}
             >
               <div
-                className="h-full rounded-full transition-all duration-500"
+                className="h-full rounded-full transition-[width] duration-500"
                 style={{
                   width: `${pct}%`,
                   background: "var(--gradient-main)",

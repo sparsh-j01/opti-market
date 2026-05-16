@@ -2,67 +2,61 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
+
+const LINKS = [
+    { href: "/", label: "Home" },
+    { href: "/learn", label: "Learn" },
+    { href: "/dashboard", label: "Dashboard" },
+];
 
 export default function Navbar() {
     const pathname = usePathname();
 
     return (
-        <motion.nav
-            initial={{ y: -60, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] glass max-w-[calc(100vw-1rem)]"
+        <nav
+            className="fixed top-0 left-0 right-0 z-[200]"
             style={{
-                borderRadius: "100px",
-                padding: "0 8px",
-                boxShadow: "0 4px 30px rgba(0, 0, 0, 0.06)",
+                background: "var(--paper)",
+                borderBottom: "1px solid var(--hairline)",
             }}
         >
-            <div className="flex items-center gap-1 h-14 px-2 sm:px-4">
-                <Link href="/" className="flex items-center gap-1 group mr-2 sm:mr-6">
+            {/* aligned to the centered ruler-spine shell (46px left rail) */}
+            <div className="mx-auto max-w-[1280px] flex items-center h-16 pl-[46px] pr-6 max-[640px]:pl-5">
+                <Link href="/" className="mr-10 flex items-baseline gap-2">
                     <span
-                        className="text-base sm:text-lg font-bold whitespace-nowrap"
-                        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "var(--text-primary)" }}
+                        className="text-lg font-semibold tracking-tight"
+                        style={{ fontFamily: "'Fraunces', Georgia, serif", color: "var(--ink)" }}
                     >
-                        Opti<span className="gradient-text">Market</span>
+                        OptiMarket
                     </span>
+                    <span className="mono-label hidden sm:inline">Bond Optimizer</span>
                 </Link>
 
-                <div className="flex items-center gap-0.5 sm:gap-1">
-                    <Link
-                        href="/"
-                        className="px-2.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200"
-                        style={{
-                            background: pathname === "/" ? "rgba(108, 92, 231, 0.08)" : "transparent",
-                            color: pathname === "/" ? "var(--accent-primary)" : "var(--text-secondary)",
-                        }}
-                    >
-                        Home
-                    </Link>
-                    <Link
-                        href="/learn"
-                        className="px-2.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200"
-                        style={{
-                            background: pathname === "/learn" ? "rgba(108, 92, 231, 0.08)" : "transparent",
-                            color: pathname === "/learn" ? "var(--accent-primary)" : "var(--text-secondary)",
-                        }}
-                    >
-                        Learn
-                    </Link>
-                    <Link
-                        href="/dashboard"
-                        className="px-2.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200"
-                        style={{
-                            background: pathname === "/dashboard" ? "rgba(108, 92, 231, 0.08)" : "transparent",
-                            color: pathname === "/dashboard" ? "var(--accent-primary)" : "var(--text-secondary)",
-                        }}
-                    >
-                        Dashboard
-                    </Link>
-
+                <div className="flex items-center gap-1">
+                    {LINKS.map((l) => {
+                        const active = pathname === l.href;
+                        return (
+                            <Link
+                                key={l.href}
+                                href={l.href}
+                                className="press px-3 py-2 text-sm transition-colors duration-150"
+                                style={{
+                                    fontFamily: "'IBM Plex Mono', monospace",
+                                    fontSize: "0.6875rem",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.12em",
+                                    color: active ? "var(--ink)" : "var(--muted)",
+                                    borderBottom: active
+                                        ? "1px solid var(--ink)"
+                                        : "1px solid transparent",
+                                }}
+                            >
+                                {l.label}
+                            </Link>
+                        );
+                    })}
                 </div>
             </div>
-        </motion.nav>
+        </nav>
     );
 }
