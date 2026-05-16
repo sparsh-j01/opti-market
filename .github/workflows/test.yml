@@ -7,8 +7,18 @@ on:
     branches: [main]
 
 jobs:
+  hygiene:
+    name: Repo hygiene (no attribution)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan tracked files + branch commits
+        run: bash scripts/check_no_attribution.sh
+
   python-tests:
-    name: Backend (pytest)
+    name: Backend (pytest — parity oracle)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,7 +33,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest
+
+      - name: Verify generated assets are in sync
+        run: |
+          python scripts/bake_real_bonds.py
+          python scripts/sync_frontend_assets.py
+          git diff --exit-code data/real_bonds.csv frontend/public/py frontend/public/data \
+            || (echo "::error::Run scripts/bake_real_bonds.py + sync_frontend_assets.py and commit." && exit 1)
 
       - name: Run pytest
         run: pytest tests/ -v
@@ -44,10 +60,67 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
+      - name: Cache vendored Pyodide
+        uses: actions/cache@v4
+        with:
+          path: frontend/public/pyodide
+          key: pyodide-${{ hashFiles('frontend/scripts/vendor-pyodide.mjs') }}
+
       - name: Install dependencies
         run: npm ci
 
       - name: Build
-        env:
-          NEXT_PUBLIC_API_URL: https://example.invalid
         run: npm run build
+
+  e2e:
+    name: E2E + parity keystone (Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.9"
+          cache: pip
+
+      - name: Install Python deps + verify parity golden is current
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python scripts/gen_parity_golden.py
+          git diff --exit-code frontend/e2e/parity_golden.json \
+            || (echo "::error::parity_golden.json is stale — run scripts/gen_parity_golden.py and commit." && exit 1)
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Cache vendored Pyodide
+        uses: actions/cache@v4
+        with:
+          path: frontend/public/pyodide
+          key: pyodide-${{ hashFiles('frontend/scripts/vendor-pyodide.mjs') }}
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E + keystone parity test
+        working-directory: frontend
+        run: npm run test:e2e
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7

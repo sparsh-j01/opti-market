@@ -1,25 +1,139 @@
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+// Compute runs in the browser via a Pyodide Web Worker — there is no server.
+// This module owns a singleton worker, a typed call() RPC, and the boot
+// status stream the UI subscribes to. Public function signatures below are
+// UNCHANGED so dashboard/components need no edits.
 
-// Render free tier cold-starts in 30-60s when idle. Default 75s.
-// Override per-call by passing a custom signal to the fetch wrapper.
-const DEFAULT_TIMEOUT_MS = 75_000;
+export type BootPhase =
+  | "idle"
+  | "downloading-runtime"
+  | "loading-packages"
+  | "loading-code"
+  | "warming-up"
+  | "ready"
+  | "error";
 
-async function apiFetch(input: string, init: RequestInit = {}): Promise<Response> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
-  try {
-    return await fetch(input, { ...init, signal: controller.signal });
-  } catch (err) {
-    if ((err as Error).name === "AbortError") {
-      throw new Error(
-        "Backend took too long to respond. The free-tier server may be cold-starting — please try again in 10-30 seconds.",
-      );
+export interface BootStatus {
+  phase: BootPhase;
+  detail: string;
+  progress: number; // 0..1
+  error?: string;
+}
+
+let worker: Worker | null = null;
+let bootStatus: BootStatus = {
+  phase: "idle",
+  detail: "Initializing…",
+  progress: 0,
+};
+const bootListeners = new Set<(s: BootStatus) => void>();
+let nextCallId = 1;
+const pending = new Map<
+  number,
+  { resolve: (v: unknown) => void; reject: (e: Error) => void }
+>();
+
+function setBoot(s: BootStatus) {
+  bootStatus = s;
+  bootListeners.forEach((fn) => fn(s));
+}
+
+// Reject every in-flight call. Used when the worker can no longer produce
+// results (boot failure, worker-level error) so callers never hang.
+function rejectAllPending(err: Error) {
+  pending.forEach((p) => p.reject(err));
+  pending.clear();
+}
+
+export function getBootStatus(): BootStatus {
+  return bootStatus;
+}
+
+export function subscribeBootStatus(fn: (s: BootStatus) => void): () => void {
+  bootListeners.add(fn);
+  fn(bootStatus);
+  return () => bootListeners.delete(fn);
+}
+
+function spawnWorker(): Worker {
+  const w = new Worker(
+    new URL("../workers/optimize.worker.ts", import.meta.url),
+    { type: "module" },
+  );
+  w.onmessage = (e: MessageEvent) => {
+    const m = e.data;
+    if (m.type === "status") {
+      setBoot({ phase: m.phase, detail: m.detail, progress: m.progress });
+    } else if (m.type === "ready") {
+      setBoot({ phase: "ready", detail: "Ready", progress: 1 });
+    } else if (m.type === "boot-error") {
+      setBoot({
+        phase: "error",
+        detail: "Failed to start the in-browser engine.",
+        progress: 0,
+        error: m.error,
+      });
+      // Boot failed: any queued call() will never get a result. Reject them
+      // so awaiting callers (e.g. dashboard load()) fail fast instead of
+      // hanging forever behind the error overlay.
+      rejectAllPending(new Error(m.error || "Engine failed to start"));
+    } else if (m.type === "result") {
+      const p = pending.get(m.id);
+      if (!p) return;
+      pending.delete(m.id);
+      if (m.ok) p.resolve(m.data);
+      else p.reject(new Error(m.error || "Computation failed"));
     }
-    throw err;
-  } finally {
-    clearTimeout(timeout);
+  };
+  w.onerror = (e) => {
+    setBoot({
+      phase: "error",
+      detail: "Failed to start the in-browser engine.",
+      progress: 0,
+      error: e.message,
+    });
+    rejectAllPending(new Error(e.message || "Worker error"));
+  };
+  return w;
+}
+
+function ensureWorker(): Worker {
+  if (typeof window === "undefined") {
+    throw new Error("Compute is only available in the browser.");
   }
+  if (!worker) {
+    worker = spawnWorker();
+    worker.postMessage({ type: "init" });
+  }
+  return worker;
+}
+
+/** Kick off Pyodide boot eagerly (e.g. on dashboard mount). */
+export function initEngine(): void {
+  ensureWorker();
+}
+
+/** Retry after a boot failure: tear down and respawn the worker. */
+export function retryEngine(): void {
+  if (worker) {
+    worker.terminate();
+    worker = null;
+  }
+  pending.forEach((p) => p.reject(new Error("Engine restarting")));
+  pending.clear();
+  setBoot({ phase: "idle", detail: "Restarting…", progress: 0 });
+  ensureWorker();
+}
+
+function call<T>(fn: string, args?: unknown): Promise<T> {
+  const w = ensureWorker();
+  const id = nextCallId++;
+  return new Promise<T>((resolve, reject) => {
+    pending.set(id, {
+      resolve: resolve as (v: unknown) => void,
+      reject,
+    });
+    w.postMessage({ type: "call", id, fn, args });
+  });
 }
 
 export interface YieldCurveData {
@@ -216,76 +330,55 @@ export interface BacktestResult {
   error?: string;
 }
 
-// API functions
+// API functions — same signatures as before; now routed to the Pyodide worker.
 
 export async function fetchYieldCurve(): Promise<YieldCurveData> {
-  const res = await apiFetch(`${API_BASE}/api/yield-curve`);
-  if (!res.ok) throw new Error("Failed to fetch yield curve");
-  return res.json();
+  return call<YieldCurveData>("yield_curve");
 }
 
 export async function fetchBonds(source: string = "real"): Promise<BondsData> {
-  const res = await apiFetch(`${API_BASE}/api/bonds?source=${source}`);
-  if (!res.ok) throw new Error("Failed to fetch bonds");
-  return res.json();
+  return call<BondsData>("bonds", { source });
 }
 
 export async function runOptimizer(params: OptimizeParams): Promise<OptimizeResult> {
-  const res = await apiFetch(`${API_BASE}/api/optimize`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(params),
-  });
-  if (!res.ok) throw new Error("Optimization request failed");
-  return res.json();
+  return call<OptimizeResult>("optimize", params);
 }
 
 export async function fetchEfficientFrontier(
   params: Omit<OptimizeParams, 'target_duration' | 'objective_type'>
 ): Promise<{ frontier: FrontierPoint[] }> {
-  const res = await apiFetch(`${API_BASE}/api/efficient-frontier`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(params),
-  });
-  if (!res.ok) throw new Error("Frontier request failed");
-  return res.json();
+  return call<{ frontier: FrontierPoint[] }>("efficient_frontier", params);
 }
 
 export async function runMonteCarlo(params: OptimizeParams & {
   n_simulations?: number;
   time_horizon_days?: number;
 }): Promise<MonteCarloResult> {
-  const res = await apiFetch(`${API_BASE}/api/monte-carlo`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(params),
-  });
-  if (!res.ok) throw new Error("Monte Carlo request failed");
-  return res.json();
+  return call<MonteCarloResult>("monte_carlo", params);
 }
 
 export async function runStressTest(params: OptimizeParams & {
   scenarios?: string[];
 }): Promise<StressTestResult> {
-  const res = await apiFetch(`${API_BASE}/api/stress-test`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(params),
-  });
-  if (!res.ok) throw new Error("Stress test request failed");
-  return res.json();
+  return call<StressTestResult>("stress_test", params);
 }
 
 export async function runBacktest(params: OptimizeParams & {
   n_periods?: number;
   period_type?: string;
 }): Promise<BacktestResult> {
-  const res = await apiFetch(`${API_BASE}/api/backtest`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(params),
-  });
-  if (!res.ok) throw new Error("Backtest request failed");
-  return res.json();
+  return call<BacktestResult>("backtest", params);
+}
+
+// Test seam for the Playwright keystone parity test. Harmless in production
+// (just exposes the same public functions on window); the E2E suite calls
+// runOptimizer here and asserts the numbers match the CPython golden.
+if (typeof window !== "undefined") {
+  (window as unknown as Record<string, unknown>).__optimarket = {
+    runOptimizer,
+    fetchYieldCurve,
+    getBootStatus,
+    subscribeBootStatus,
+    initEngine,
+  };
 }

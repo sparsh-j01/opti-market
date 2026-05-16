@@ -1,0 +1,73 @@
+name: Refresh market data
+
+# Build-time treasury refresh. Runs every 3 days and on every push to main.
+# Fetches the live Treasury curve, re-stages static assets, and commits the
+# result — which triggers a Vercel redeploy with a fresh curve. $0 at runtime.
+
+on:
+  schedule:
+    - cron: "0 6 */3 * *" # 06:00 UTC every 3rd day
+  push:
+    branches: [main]
+    paths:
+      - "data/real_bonds.csv"
+      - "scripts/refresh_treasury.py"
+      - "scripts/sync_frontend_assets.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Serialize runs but NEVER cancel one in flight: a cancel mid `git push`
+# can abort the commit and silently stop the data refresh. Queue instead.
+concurrency:
+  group: refresh-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.9"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Refresh treasury snapshot
+        run: python scripts/refresh_treasury.py
+
+      - name: Re-stage frontend static assets
+        run: python scripts/sync_frontend_assets.py
+
+      - name: Commit refreshed data
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/treasury_snapshot.json frontend/public/data
+          if git diff --cached --quiet; then
+            echo "No data changes; nothing to commit."
+            exit 0
+          fi
+          git commit -m "chore(data): refresh treasury snapshot"
+          # Rebase-and-retry: another run (or any push to main) may have
+          # advanced the branch. Without this the push fails non-fast-forward
+          # and the refresh silently stops. Fail loudly if it can't land.
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              echo "Pushed on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — rebasing on origin/main…"
+            git pull --rebase origin main
+          done
+          echo "::error::Could not push refreshed data after 5 attempts."
+          exit 1
