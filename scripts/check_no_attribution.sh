@@ -17,6 +17,7 @@ echo "Scanning tracked files…"
 while IFS= read -r f; do
   case "$f" in
     scripts/check_no_attribution.sh) continue ;;
+    .gitignore) continue ;;  # necessarily names ignored local files (same rationale)
     *package-lock.json|*.lock) continue ;;
     frontend/public/pyodide/*) continue ;;
   esac

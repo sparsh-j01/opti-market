@@ -59,8 +59,14 @@ ppt_content.md
 # Gemini
 .gemini/
 
-# gstack — local session state, security reports, learnings (never commit)
+# Local tooling state — session state, agent/skill installs, lockfiles
+# (never commit: third-party tooling metadata, not project source)
 .gstack/
+.agents/
+skills-lock.json
 
 # Planning docs (local only)
 plan.md
+claude.md
+design.md
+
