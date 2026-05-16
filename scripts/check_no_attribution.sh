@@ -9,13 +9,16 @@ PATTERN='claude|copilot|chatgpt|gpt-?[0-9]|openai|anthropic|co-authored-by:[[:sp
 
 fail=0
 
-# 1. Tracked files. Exclude this script (it necessarily contains the words)
-#    and lockfiles (vendor hashes can coincidentally match).
+# 1. Tracked files. Exclude this script (it necessarily contains the words),
+#    lockfiles, and the vendored Pyodide runtime (third-party WASM/manifest;
+#    sha256 hashes + package names coincidentally match — same rationale as
+#    lockfiles, this is not authored content).
 echo "Scanning tracked files…"
 while IFS= read -r f; do
   case "$f" in
     scripts/check_no_attribution.sh) continue ;;
     *package-lock.json|*.lock) continue ;;
+    frontend/public/pyodide/*) continue ;;
   esac
   if grep -EniH "$PATTERN" -- "$f" 2>/dev/null; then
     fail=1

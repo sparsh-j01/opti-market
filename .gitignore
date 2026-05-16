@@ -18,8 +18,10 @@ node_modules/
 .next/
 out/
 
-# Vendored Pyodide runtime — regenerated at build time, never committed
-frontend/public/pyodide/
+# Vendored Pyodide runtime IS committed: Vercel's Next builder doesn't run
+# our vendor step reliably, so the build-time-only approach 404'd in prod.
+# Committing the pruned runtime (~41 MB) guarantees it ships. The vendor
+# script still regenerates it locally/CI and skips when the marker exists.
 frontend/pyodide-*.tar.bz2
 
 # Playwright
