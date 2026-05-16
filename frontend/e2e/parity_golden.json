@@ -2,10 +2,10 @@
   "optimize_default": {
     "fn": "optimize",
     "metrics": {
-      "Portfolio Duration": 5.0,
-      "Portfolio Volatility": 0.08281823235254421,
-      "Portfolio Yield": 0.056325,
-      "Sharpe Ratio": 0.5593575072068884
+      "Portfolio Duration": 4.9999999399999995,
+      "Portfolio Volatility": 0.08477498188476165,
+      "Portfolio Yield": 0.06308928564,
+      "Sharpe Ratio": 0.6262376524263561
     },
     "params": {
       "data_source": "real",
@@ -15,10 +15,10 @@
   "optimize_sharpe": {
     "fn": "optimize",
     "metrics": {
-      "Portfolio Duration": 5.000000430000042,
-      "Portfolio Volatility": 0.03435944197372967,
-      "Portfolio Yield": 0.039787246828724684,
-      "Sharpe Ratio": 0.8669304597990628
+      "Portfolio Duration": 4.99934552684334,
+      "Portfolio Volatility": 0.032951828751937376,
+      "Portfolio Yield": 0.048641732477184056,
+      "Sharpe Ratio": 1.1726733823509612
     },
     "params": {
       "data_source": "real",
