@@ -53,7 +53,9 @@ def main() -> int:
         snap = json.load(fh)
     ts = float(snap.get("timestamp", 0) or 0)
     if ts > 0:
-        as_of = datetime.datetime.utcfromtimestamp(ts).strftime("%Y-%m-%d")
+        as_of = datetime.datetime.fromtimestamp(
+            ts, datetime.timezone.utc
+        ).strftime("%Y-%m-%d")
     else:
         as_of = datetime.date.today().isoformat()
 

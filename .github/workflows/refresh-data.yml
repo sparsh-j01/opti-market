@@ -18,9 +18,11 @@ on:
 permissions:
   contents: write
 
+# Serialize runs but NEVER cancel one in flight: a cancel mid `git push`
+# can abort the commit and silently stop the data refresh. Queue instead.
 concurrency:
   group: refresh-data
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   refresh:
@@ -47,12 +49,25 @@ jobs:
 
       - name: Commit refreshed data
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/treasury_snapshot.json frontend/public/data
           if git diff --cached --quiet; then
             echo "No data changes; nothing to commit."
-          else
-            git commit -m "chore(data): refresh treasury snapshot"
-            git push
+            exit 0
           fi
+          git commit -m "chore(data): refresh treasury snapshot"
+          # Rebase-and-retry: another run (or any push to main) may have
+          # advanced the branch. Without this the push fails non-fast-forward
+          # and the refresh silently stops. Fail loudly if it can't land.
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              echo "Pushed on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — rebasing on origin/main…"
+            git pull --rebase origin main
+          done
+          echo "::error::Could not push refreshed data after 5 attempts."
+          exit 1

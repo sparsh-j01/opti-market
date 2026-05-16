@@ -100,8 +100,17 @@ sys.path.insert(0, "${WORK_DIR}")
 import core_api
 
 _NO_ARG = ("yield_curve", "stress_scenarios")
+# Hard allowlist: only these core_api functions are callable from the main
+# thread. Prevents an unexpected/typo'd fn name from resolving to an arbitrary
+# module attribute via getattr.
+_ALLOWED = {
+    "yield_curve", "bonds", "optimize", "efficient_frontier",
+    "monte_carlo", "stress_test", "backtest", "stress_scenarios",
+}
 
 def _dispatch(fn, args_json):
+    if fn not in _ALLOWED:
+        raise ValueError("unknown function: %r" % (fn,))
     func = getattr(core_api, fn)
     if fn in _NO_ARG:
         return json.dumps(func())

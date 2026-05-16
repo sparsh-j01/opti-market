@@ -37,6 +37,13 @@ function setBoot(s: BootStatus) {
   bootListeners.forEach((fn) => fn(s));
 }
 
+// Reject every in-flight call. Used when the worker can no longer produce
+// results (boot failure, worker-level error) so callers never hang.
+function rejectAllPending(err: Error) {
+  pending.forEach((p) => p.reject(err));
+  pending.clear();
+}
+
 export function getBootStatus(): BootStatus {
   return bootStatus;
 }
@@ -65,6 +72,10 @@ function spawnWorker(): Worker {
         progress: 0,
         error: m.error,
       });
+      // Boot failed: any queued call() will never get a result. Reject them
+      // so awaiting callers (e.g. dashboard load()) fail fast instead of
+      // hanging forever behind the error overlay.
+      rejectAllPending(new Error(m.error || "Engine failed to start"));
     } else if (m.type === "result") {
       const p = pending.get(m.id);
       if (!p) return;
@@ -80,6 +91,7 @@ function spawnWorker(): Worker {
       progress: 0,
       error: e.message,
     });
+    rejectAllPending(new Error(e.message || "Worker error"));
   };
   return w;
 }
