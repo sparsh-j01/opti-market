@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 /* Emil Kowalski strong ease-out — built-in eases lack punch. */
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
@@ -15,13 +15,28 @@ const reveal = {
   }),
 };
 
+/* Reduced-motion: keep the opacity fade (it aids comprehension), drop the
+   movement. Emil: "fewer and gentler, not zero." */
+const revealReduced = {
+  hidden: { opacity: 0 },
+  visible: (i: number) => ({
+    opacity: 1,
+    transition: { delay: i * 0.04, duration: 0.3 },
+  }),
+};
+
 /* Real Nelson-Siegel geometry as the hero anchor — the product's own
    instrument, not decoration (DESIGN.md: data is the only ornament). */
 function YieldCurve() {
+  const reduce = useReducedMotion();
   const W = 520;
   const H = 340;
   const pad = { l: 44, r: 16, t: 24, b: 36 };
-  const b0 = 0.047, b1 = -0.013, b2 = -0.022, lam = 2.1;
+  // Fitted to the four `obs` points below so the curve actually passes
+  // through its own observations (DESIGN.md: data is the instrument, not
+  // decoration — a fit that misses its dots is a lie). NS system solved
+  // at λ=2.5; max residual ≈ 2bp at the 5y knot.
+  const b0 = 0.0539, b1 = -0.0219, b2 = -0.0149, lam = 2.5;
   const ns = (t: number) => {
     const x = t / lam;
     const e = Math.exp(-x);
@@ -50,23 +65,30 @@ function YieldCurve() {
             stroke="var(--hairline)" strokeWidth="1" />
           <text x={pad.l - 8} y={py(g) + 3} textAnchor="end"
             fontFamily="'IBM Plex Mono', monospace" fontSize="10"
+            style={{ fontVariantNumeric: "tabular-nums" }}
             fill="var(--muted)">{(g * 100).toFixed(1)}%</text>
         </g>
       ))}
       {gridT.map((t) => (
         <text key={t} x={px(t)} y={H - pad.b + 18} textAnchor="middle"
           fontFamily="'IBM Plex Mono', monospace" fontSize="10"
+          style={{ fontVariantNumeric: "tabular-nums" }}
           fill="var(--muted)">{t}y</text>
       ))}
       <motion.path d={path} fill="none" stroke="var(--ink)" strokeWidth="2"
         strokeLinecap="round"
-        initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+        initial={reduce ? false : { pathLength: 0 }} animate={{ pathLength: 1 }}
         transition={{ duration: 1.1, ease: EASE_OUT, delay: 0.2 }} />
       {obs.map((o, i) => (
+        // The line draws first; the market observations then *land* on it
+        // (a subtle settle spring, never scale(0) from the void). This is
+        // "the one allowed moment" — the fit being confirmed by real data.
         <motion.circle key={o.t} cx={px(o.t)} cy={py(o.y)} r="4.5"
           fill="var(--surface)" stroke="var(--ink)" strokeWidth="1.5"
-          initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.9 + i * 0.08, duration: 0.3, ease: EASE_OUT }} />
+          style={{ transformBox: "fill-box", transformOrigin: "center" }}
+          initial={reduce ? false : { opacity: 0, scale: 0.4 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 1.15 + i * 0.09, type: "spring", stiffness: 480, damping: 20 }} />
       ))}
     </svg>
   );
@@ -97,6 +119,8 @@ const steps = [
 ];
 
 export default function LandingPage() {
+  const reduce = useReducedMotion();
+  const rv = reduce ? revealReduced : reveal;
   return (
     <div className="min-h-screen spine mx-auto max-w-[1280px]" style={{ background: "var(--paper)" }}>
       {/* ── Hero: asymmetric editorial split ── */}
@@ -105,7 +129,7 @@ export default function LandingPage() {
           <motion.p
             className="mono-label mb-7"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.3, ease: EASE_OUT }}
           >
             In-browser fixed-income optimizer
           </motion.p>
@@ -117,7 +141,7 @@ export default function LandingPage() {
               letterSpacing: "-0.025em",
               fontSize: "clamp(2.6rem, 5.4vw, 4.4rem)",
             }}
-            initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, ease: EASE_OUT }}
           >
             The bond math,
@@ -127,7 +151,7 @@ export default function LandingPage() {
           <motion.p
             className="text-lg leading-relaxed mb-9"
             style={{ color: "var(--muted)", maxWidth: "44ch" }}
-            initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, delay: 0.08, ease: EASE_OUT }}
           >
             Nelson-Siegel curves, SLSQP optimization, Monte Carlo VaR — the
@@ -136,7 +160,7 @@ export default function LandingPage() {
           </motion.p>
           <motion.div
             className="flex flex-wrap items-center gap-3"
-            initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, delay: 0.16, ease: EASE_OUT }}
           >
             <Link href="/dashboard"
@@ -168,7 +192,12 @@ export default function LandingPage() {
       </section>
 
       {/* Quiet credential line — not a metric grid */}
-      <div className="px-6 pb-20">
+      <motion.div
+        className="px-6 pb-20"
+        initial={reduce ? { opacity: 0 } : { opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, delay: 0.32, ease: EASE_OUT }}
+      >
         <p
           className="text-sm pt-5"
           style={{
@@ -180,7 +209,7 @@ export default function LandingPage() {
         >
           200+ FINRA bonds&nbsp;&nbsp;·&nbsp;&nbsp;49 issuers&nbsp;&nbsp;·&nbsp;&nbsp;8 sectors&nbsp;&nbsp;·&nbsp;&nbsp;7 stress scenarios&nbsp;&nbsp;·&nbsp;&nbsp;47 tests passing&nbsp;&nbsp;·&nbsp;&nbsp;$0 to run
         </p>
-      </div>
+      </motion.div>
 
       {/* ── Capabilities: asymmetric, ruled list (no card grid) ── */}
       <section className="px-6 py-24 grid lg:grid-cols-[0.8fr_1.2fr] gap-x-16 gap-y-10">
@@ -208,7 +237,7 @@ export default function LandingPage() {
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, margin: "-60px" }}
-              variants={reveal}
+              variants={rv}
               custom={i}
             >
               <span
@@ -246,7 +275,7 @@ export default function LandingPage() {
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, margin: "-50px" }}
-              variants={reveal}
+              variants={rv}
               custom={i}
             >
               <div
