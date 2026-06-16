@@ -1,5 +1,5 @@
 {
-  "data_as_of": "2026-06-13",
+  "data_as_of": "2026-06-16",
   "bond_universe": "Curated FINRA TRACE corporate bond snapshot",
   "treasury_source": "U.S. Treasury via yfinance, refreshed at deploy time"
 }
